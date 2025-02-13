@@ -1,22 +1,42 @@
-name: CI Inicial
+name: CI Pipeline
 
 on:
   push:
-    branches: [ develop, homolog, main ]
+    branches:
+      - develop
+      - homolog
+      - main
   pull_request:
-    branches: [ develop, homolog, main ]
+    branches:
+      - develop
+      - homolog
+      - main
 
 jobs:
-  ci-basic:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout do Código
+      - name: Checkout do código
         uses: actions/checkout@v3
 
       - name: Configurar Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.13.1"
+          python-version: "3.12"
 
-      - name: Exibir Mensagem de Sucesso
-        run: echo "🚀 CI Funcionando Corretamente!"
+      - name: Instalar dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install
+
+      - name: Rodar Testes (pytest)
+        run: |
+          poetry run pytest --maxfail=3 --disable-warnings
+
+      - name: Checagem de Código (black, flake8, mypy)
+        run: |
+          poetry run black --check .
+          poetry run flake8
+          poetry run mypy app
