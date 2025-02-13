@@ -1,4 +1,4 @@
-# 🎮 Golden Raspberry Awards API
+# 🎬 Golden Raspberry Awards API
 
 API RESTful para processar e analisar os vencedores do prêmio **Golden Raspberry Awards**, seguindo os princípios de **Clean Architecture** e boas práticas de desenvolvimento.
 
@@ -87,7 +87,7 @@ O projeto segue um **workflow estruturado** para manter o código organizado e r
 7️⃣ **Se tudo estiver validado, feito merge de `homolog` → `main`**  
 
 🔗 **Veja todos os Pull Requests criados no projeto:**  
-[📌 GitHub PRs - Abertos e Fechados](https://github.com/maykondgranemann/golden-raspberry-awards-api/pulls)
+[📌 GitHub PRs - Fechados](https://github.com/maykondgranemann/golden-raspberry-awards-api/pulls?q=is%3Apr+is%3Aclosed)
 
 ---
 
@@ -107,7 +107,7 @@ docker-compose up --build
 
 ### ✅ Rodando Testes
 ```bash
-pytest
+pytest tests
 ```
 
 
