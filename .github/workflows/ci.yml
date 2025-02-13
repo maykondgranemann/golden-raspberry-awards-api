@@ -1,0 +1,22 @@
+name: CI Inicial
+
+on:
+  push:
+    branches: [ develop, homolog, main ]
+  pull_request:
+    branches: [ develop, homolog, main ]
+
+jobs:
+  ci-basic:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do Código
+        uses: actions/checkout@v3
+
+      - name: Configurar Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.13.1"
+
+      - name: Exibir Mensagem de Sucesso
+        run: echo "🚀 CI Funcionando Corretamente!"
