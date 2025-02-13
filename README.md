@@ -107,7 +107,7 @@ docker-compose up --build
 
 ### ✅ Rodando Testes
 ```bash
-pytest
+pytest tests
 ```
 
 
