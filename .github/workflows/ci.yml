@@ -53,17 +53,28 @@ jobs:
         run: |
           docker push zuplae/golden-raspberry-awards-api:latest
      
+      - name: Criar credencial do GCP a partir do Secret
+        run: |
+          echo "${{ secrets.GCP_SA_KEY }}" > /tmp/gcp-sa-key.json
+
+      - name: Autenticar no Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: "${{ secrets.GCP_SA_KEY }}"
+
+      - name: Configurar gcloud CLI
+        run: |
+          gcloud auth activate-service-account --key-file=/tmp/gcp-sa-key.json
+          gcloud config set project golden-raspberry-awards-api
+          gcloud config set compute/zone us-central1-a
+          gcloud container clusters get-credentials golden-cluster --region us-central1
+
       - name: Deploy no Kubernetes (GKE) usando imagem oficial do gcloud
         uses: docker://gcr.io/google.com/cloudsdktool/cloud-sdk:latest
         with:
           entrypoint: /bin/bash
-          args: |
-            -c "
-            echo '${{ secrets.GCP_SA_KEY }}' > /tmp/gcp-sa-key.json &&
-            gcloud auth activate-service-account --key-file=/tmp/gcp-sa-key.json &&
-            gcloud config set project golden-raspberry-awards-api &&
-            gcloud config set compute/zone us-central1-a &&
-            gcloud container clusters get-credentials golden-cluster --region us-central1 &&
-            kubectl apply -f infrastructure/deployment.yaml &&
-            kubectl rollout status deployment golden-raspberry-awards
-            "
+        env:
+          USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
+        run: |
+          kubectl apply -f infrastructure/deployment.yaml
+          kubectl rollout status deployment golden-raspberry-awards
