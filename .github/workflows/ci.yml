@@ -61,10 +61,10 @@ jobs:
         with:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
-      - name: 🛠️ Configurar gcloud CLI
+      - name: Configurar gcloud CLI
         run: |
           gcloud auth activate-service-account --key-file=gcp-sa-key.json
-          gcloud config set project SEU_GCP_PROJECT_ID
+          gcloud config set project golden-raspberry-awards-api
           gcloud config set compute/zone us-central1-a
           gcloud container clusters get-credentials golden-cluster --region us-central1
 
