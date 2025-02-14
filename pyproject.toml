@@ -5,6 +5,7 @@ description = "API RESTful para possibilitar a leitura da lista de indicados e v
 authors = ["Maykon Granemann <maykondgranemann@gmail.com>"]
 license = "MIT"
 readme = "README.md"
+packages = [{ include = "app" }]
 
 [tool.poetry.dependencies]
 python = "^3.13"
