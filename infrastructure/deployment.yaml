@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: golden-raspberry-awards
+  labels:
+    app: golden-raspberry-awards
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: golden-raspberry-awards
+  template:
+    metadata:
+      labels:
+        app: golden-raspberry-awards
+    spec:
+      containers:
+        - name: api
+          image: zuplae/golden-raspberry-awards-api:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: "sqlite:///./db.sqlite3"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: golden-raspberry-awards-service
+spec:
+  selector:
+    app: golden-raspberry-awards
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: LoadBalancer
