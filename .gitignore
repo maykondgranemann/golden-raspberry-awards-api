@@ -50,6 +50,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+.last_test_run
 
 # Translations
 *.mo
@@ -169,3 +170,11 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+#SQLite
+*.db
+
+
+#terraform
+.terraform*
+terraform.*
