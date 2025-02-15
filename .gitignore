@@ -173,3 +173,8 @@ cython_debug/
 
 #SQLite
 *.db
+
+
+#terraform
+.terraform*
+terraform.*

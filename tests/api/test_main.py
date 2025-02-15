@@ -3,8 +3,9 @@ from app.main import app
 
 client = TestClient(app)
 
+
 class TestAPI:
-    def test_health_check(self):
+    def test_health_check(self) -> None:
         response = client.get("/health")
         assert response.status_code == 200
         json_response = response.json()
@@ -12,7 +13,7 @@ class TestAPI:
         assert "last_tests_run" in json_response
         assert isinstance(json_response["last_tests_run"], str)
 
-    def test_root(self):
+    def test_root(self) -> None:
         response = client.get("/")
         assert response.status_code == 200
         assert response.json()["message"] == "Golden Raspberry Awards API is running!"
