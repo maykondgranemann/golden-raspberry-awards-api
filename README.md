@@ -46,6 +46,7 @@ A API está disponível publicamente no GCP e pode ser acessada em:
 ```bash
 curl http://107.178.211.239/health
 
+```
 ---
 
 ## 📂 **Estrutura do Repositório**
