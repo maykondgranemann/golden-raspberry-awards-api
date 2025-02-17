@@ -2,6 +2,7 @@ import re
 import pandas as pd
 from typing import cast
 from typing import List, Dict, Set, Any, Union, IO
+from app.utils.logger import logger
 
 
 class CSVImporter:
@@ -26,6 +27,9 @@ class CSVImporter:
         :raises ValueError: Se ocorrer um erro na leitura do arquivo ou se
         os dados forem inválidos.
         """
+
+        logger.info(f"Iniciando importação do CSV: {filepath}")
+
         df: pd.DataFrame = cls._read_csv(filepath)
         df = cls._validate_columns(df)
         df = cls._normalize_columns(df)
@@ -34,6 +38,7 @@ class CSVImporter:
         df = cls._normalize_winner_column(df)
         df = cls._split_producers(df)
 
+        logger.success(f"Importação do CSV concluída com {len(df)} registros válidos.")
         return cast(List[Dict[str, Any]], df.to_dict(orient="records"))
 
     @staticmethod
@@ -46,10 +51,12 @@ class CSVImporter:
         :raises ValueError: Se ocorrer um erro ao ler o arquivo.
         """
         try:
-            return pd.read_csv(filepath, sep=None, engine="python", dtype=str).fillna(
-                ""
-            )
+            logger.info(f"Lendo arquivo CSV: {filepath}")
+            df = pd.read_csv(filepath, sep=None, engine="python", dtype=str).fillna("")
+            logger.info("Arquivo CSV carregado com sucesso.")
+            return df
         except Exception as e:
+            logger.error(f"Erro ao ler o arquivo CSV: {e}")
             raise ValueError(f"Erro ao ler o arquivo CSV: {e}")
 
     @classmethod
@@ -65,7 +72,10 @@ class CSVImporter:
             df.columns.str.lower().str.strip()
         )
         if missing_columns:
+            logger.error(f"Colunas ausentes no CSV: {missing_columns}")
             raise ValueError(f"Arquivo CSV inválido! Faltando: {missing_columns}")
+
+        logger.info("Todas as colunas essenciais estão presentes.")
         return df
 
     @staticmethod
@@ -77,6 +87,7 @@ class CSVImporter:
         :return: DataFrame com colunas normalizadas.
         """
         df.columns = df.columns.str.lower().str.strip()
+        logger.info("Colunas normalizadas.")
         return df
 
     @staticmethod
@@ -88,7 +99,13 @@ class CSVImporter:
         :param df: DataFrame contendo os dados do CSV.
         :return: DataFrame filtrado.
         """
-        return df[df["year"].str.isnumeric() & df["producers"].str.strip().ne("")]
+        before_count = len(df)
+        df = df[df["year"].str.isnumeric() & df["producers"].str.strip().ne("")]
+        after_count = len(df)
+        rm_count = before_count - after_count
+
+        logger.info(f"Linhas filtradas: {rm_count} removidas, {after_count} válidas.")
+        return df
 
     @staticmethod
     def _convert_data_types(df: pd.DataFrame) -> pd.DataFrame:
@@ -99,6 +116,8 @@ class CSVImporter:
         :return: DataFrame com tipos convertidos.
         """
         df["year"] = df["year"].astype(int)
+
+        logger.info("Coluna 'year' convertida para inteiro.")
         return df
 
     @staticmethod
@@ -110,6 +129,8 @@ class CSVImporter:
         :return: DataFrame com valores booleanos na coluna 'winner'.
         """
         df["winner"] = df["winner"].str.lower().str.strip().eq("yes")
+
+        logger.info("Coluna 'winner' normalizada para booleano.")
         return df
 
     @classmethod
@@ -132,4 +153,5 @@ class CSVImporter:
             ]
         )
 
+        logger.info("Coluna 'producers' dividida corretamente.")
         return df
