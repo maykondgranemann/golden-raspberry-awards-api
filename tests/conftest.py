@@ -40,3 +40,11 @@ def db_session() -> Iterator[Session]:
     db.rollback()  # Desfaz alterações após o teste
     db.close()  # Fecha a sessão
     Base.metadata.drop_all(bind=engine)  # Remove todas as tabelas ao final do teste
+
+
+@pytest.fixture
+def sample_producers() -> list[str]:
+    """
+    Retorna uma lista de nomes de produtores para testes.
+    """
+    return ["John Doe", "Jane Smith", "Alice Johnson"]
