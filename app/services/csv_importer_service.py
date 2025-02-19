@@ -5,7 +5,7 @@ from typing import List, Dict, Set, Any, Union, IO
 from app.utils.logger import logger
 
 
-class CSVImporter:
+class CSVImporterService:
     """
     Classe responsável por importar, validar e processar arquivos CSV
     contendo informações

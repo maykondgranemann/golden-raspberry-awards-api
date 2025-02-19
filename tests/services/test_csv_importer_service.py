@@ -1,14 +1,14 @@
 import pytest
 import pandas as pd
 from pytest_mock import MockFixture
-from app.services.csv_importer import CSVImporter
+from app.services.csv_importer_service import CSVImporterService
 from io import StringIO
 from typing import Any, List, Dict
 
 
-class TestCSVImporter:
+class TestCSVImporterServiceService:
     """
-    Testes unitários para a classe CSVImporter.
+    Testes unitários para a classe CSVImporterService.
     """
 
     @pytest.fixture(scope="class")
@@ -41,9 +41,9 @@ class TestCSVImporter:
         """
         Testa a importação completa do CSV.
         """
-        mocker.patch.object(CSVImporter, "_read_csv", return_value=df_sample)
+        mocker.patch.object(CSVImporterService, "_read_csv", return_value=df_sample)
 
-        movies: List[Dict[str, Any]] = CSVImporter.import_csv("fake_path.csv")
+        movies: List[Dict[str, Any]] = CSVImporterService.import_csv("fake_path.csv")
 
         assert isinstance(movies, list)
         assert len(movies) == 5
@@ -55,7 +55,7 @@ class TestCSVImporter:
         """
         Testa a leitura do CSV garantindo que o DataFrame seja carregado corretamente.
         """
-        df: pd.DataFrame = CSVImporter._read_csv(StringIO(sample_csv))
+        df: pd.DataFrame = CSVImporterService._read_csv(StringIO(sample_csv))
         assert isinstance(df, pd.DataFrame)
         assert not df.empty
 
@@ -63,7 +63,7 @@ class TestCSVImporter:
         """
         Testa se a validação das colunas funciona corretamente.
         """
-        df_validated: pd.DataFrame = CSVImporter._validate_columns(df_sample)
+        df_validated: pd.DataFrame = CSVImporterService._validate_columns(df_sample)
         assert isinstance(df_validated, pd.DataFrame)
 
     def test_validate_columns_missing(self) -> None:
@@ -73,13 +73,13 @@ class TestCSVImporter:
         df_invalid = pd.DataFrame({"title": ["Movie 1"], "producers": ["John Doe"]})
 
         with pytest.raises(ValueError, match=r"Arquivo CSV inválido! Faltando: {.*}"):
-            CSVImporter._validate_columns(df_invalid)
+            CSVImporterService._validate_columns(df_invalid)
 
     def test_normalize_columns(self, df_sample: pd.DataFrame) -> None:
         """
         Testa se a normalização dos nomes das colunas funciona corretamente.
         """
-        df_normalized: pd.DataFrame = CSVImporter._normalize_columns(df_sample)
+        df_normalized: pd.DataFrame = CSVImporterService._normalize_columns(df_sample)
         assert list(df_normalized.columns) == [
             "year",
             "title",
@@ -92,7 +92,7 @@ class TestCSVImporter:
         """
         Testa se o filtro de linhas inválidas funciona corretamente.
         """
-        df_filtered: pd.DataFrame = CSVImporter._filter_valid_rows(df_sample)
+        df_filtered: pd.DataFrame = CSVImporterService._filter_valid_rows(df_sample)
         assert (
             len(df_filtered) == 5
         )  # Certifica-se de que todas as linhas sejam válidas
@@ -101,21 +101,23 @@ class TestCSVImporter:
         """
         Testa a conversão da coluna 'year' para inteiro.
         """
-        df_converted: pd.DataFrame = CSVImporter._convert_data_types(df_sample)
+        df_converted: pd.DataFrame = CSVImporterService._convert_data_types(df_sample)
         assert df_converted["year"].dtype == "int64"
 
     def test_normalize_winner_column(self, df_sample: pd.DataFrame) -> None:
         """
         Testa a normalização da coluna 'winner'.
         """
-        df_normalized: pd.DataFrame = CSVImporter._normalize_winner_column(df_sample)
+        df_normalized: pd.DataFrame = CSVImporterService._normalize_winner_column(
+            df_sample
+        )
         assert df_normalized["winner"].tolist() == [True, False, True, False, False]
 
     def test_split_producers(self, df_sample: pd.DataFrame) -> None:
         """
         Testa a separação da coluna 'producers' em listas corretamente.
         """
-        df_split: pd.DataFrame = CSVImporter._split_producers(df_sample)
+        df_split: pd.DataFrame = CSVImporterService._split_producers(df_sample)
         assert df_split["producers"].tolist() == [
             ["Allan Carr"],
             ["Jerry Weintraub"],
@@ -130,7 +132,7 @@ class TestCSVImporter:
         diferentes separadores.
         """
         df_test = pd.DataFrame({"producers": ["John Doe, Jane Smith and Bob Brown"]})
-        df_split: pd.DataFrame = CSVImporter._split_producers(df_test)
+        df_split: pd.DataFrame = CSVImporterService._split_producers(df_test)
         assert df_split["producers"].tolist() == [
             ["John Doe", "Jane Smith", "Bob Brown"]
         ]
