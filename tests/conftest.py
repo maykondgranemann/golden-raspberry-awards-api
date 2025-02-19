@@ -1,11 +1,14 @@
+from fastapi.testclient import TestClient
 import pytest
 import datetime
 import pytz
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from app.db.database import get_db
 from app.models import Base
 from typing import Iterator
 from sqlalchemy.orm import Session
+from app.main import app
 
 
 TESTS_CACHE_FILE = "tests/.last_test_run"
@@ -48,3 +51,11 @@ def sample_producers() -> list[str]:
     Retorna uma lista de nomes de produtores para testes.
     """
     return ["John Doe", "Jane Smith", "Alice Johnson"]
+
+
+@pytest.fixture(scope="function")
+def client() -> Iterator[TestClient]:
+    """Retorna um cliente de teste da API utilizando o mesmo banco em memória."""
+
+    with TestClient(app) as test_client:
+        yield test_client  # Retorna o cliente de teste

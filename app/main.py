@@ -5,6 +5,9 @@ import os
 import datetime
 import pytz
 
+from app.api.routes import producer_routes
+
+
 app = FastAPI(
     title="Golden Raspberry Awards API",
     description=(
@@ -12,6 +15,7 @@ app = FastAPI(
     ),
     version="0.0.1",
 )
+
 
 TESTS_CACHE_FILE = "tests/.last_test_run"
 
@@ -46,3 +50,7 @@ def health_check() -> dict[str, str | bool]:
 @app.get("/")
 def root() -> dict[str, str]:
     return {"message": "Golden Raspberry Awards API is running!"}
+
+
+# Incluindo as rotas de produtores
+app.include_router(producer_routes.router)
