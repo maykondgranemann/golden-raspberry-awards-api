@@ -24,8 +24,8 @@ def save_test_execution_time() -> None:
         f.write(now_brasilia.isoformat())
 
 
-# Criar uma engine temporária para os testes (SQLite em memória)
-TEST_DATABASE_URL = "sqlite:///:memory:"
+# Criar uma engine temporária para os testes
+TEST_DATABASE_URL = "sqlite:///test.db"
 engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
 
 # Criar sessão independente para os testes
@@ -54,8 +54,15 @@ def sample_producers() -> list[str]:
 
 
 @pytest.fixture(scope="function")
-def client() -> Iterator[TestClient]:
-    """Retorna um cliente de teste da API utilizando o mesmo banco em memória."""
+def client(db_session: Session) -> Iterator[TestClient]:
+    """Garante que o client use a mesma sessão de banco para evitar desconexões."""
+
+    def override_get_db() -> Iterator[Session]:
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db  # Substitui a conexão do banco
 
     with TestClient(app) as test_client:
-        yield test_client  # Retorna o cliente de teste
+        yield test_client
+
+    app.dependency_overrides.clear()
