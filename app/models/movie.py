@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String
-from app.models.base import Base
+from app.models import Base
 
 
 class Movie(Base):

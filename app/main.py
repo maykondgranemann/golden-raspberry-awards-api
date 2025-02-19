@@ -5,7 +5,7 @@ import os
 import datetime
 import pytz
 
-from app.api.routes import producer_routes
+from app.api.routes import producer_routes, movie_routes
 
 
 app = FastAPI(
@@ -54,3 +54,6 @@ def root() -> dict[str, str]:
 
 # Incluindo as rotas de produtores
 app.include_router(producer_routes.router)
+
+# Registrar rotas de filmes
+app.include_router(movie_routes.router)

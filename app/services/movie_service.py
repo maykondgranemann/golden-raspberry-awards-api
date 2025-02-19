@@ -25,13 +25,13 @@ class MovieService:
     def get_movie_by_id(db: Session, movie_id: int) -> Optional[MovieResponse]:
         """Obtém um filme pelo ID, retornando no formato correto."""
         movie = MovieRepository.get_by_id(db, movie_id)
-        if movie is None:
-            return None
-        return MovieResponse(
-            id=cast(int, movie.id),
-            title=cast(str, movie.title),
-            year=cast(int, movie.year),
-        )
+        if movie:
+            return MovieResponse(
+                id=cast(int, movie.id),
+                title=str(movie.title),
+                year=cast(int, movie.year),
+            )
+        return None
 
     @staticmethod
     def get_movie_by_title(db: Session, title: str) -> Optional[MovieResponse]:
