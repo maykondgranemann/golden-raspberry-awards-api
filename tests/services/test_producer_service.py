@@ -25,9 +25,9 @@ class TestProducerService:
             db_session, producer_data
         )
 
-        fetched_producer: Optional[
-            ProducerResponse
-        ] = ProducerService.get_producer_by_id(db_session, int(producer.id))
+        fetched_producer: Optional[ProducerResponse] = (
+            ProducerService.get_producer_by_id(db_session, int(producer.id))
+        )
 
         assert fetched_producer is not None
         assert fetched_producer.id == producer.id
@@ -45,9 +45,9 @@ class TestProducerService:
         producer_data = ProducerCreate(name="Martin Scorsese")
         ProducerService.create_producer(db_session, producer_data)
 
-        fetched_producer: Optional[
-            ProducerResponse
-        ] = ProducerService.get_producer_by_name(db_session, "Martin Scorsese")
+        fetched_producer: Optional[ProducerResponse] = (
+            ProducerService.get_producer_by_name(db_session, "Martin Scorsese")
+        )
 
         assert fetched_producer is not None
         assert fetched_producer.name == "Martin Scorsese"
