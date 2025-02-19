@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.producer import Producer
 from app.repositories.producer_repository import ProducerRepository
+from typing import cast
 
 
 class TestProducerRepository:
@@ -34,7 +35,9 @@ class TestProducerRepository:
         Testa a busca de um produtor pelo ID.
         """
         producer = ProducerRepository.create(db_session, "Christopher Nolan")
-        fetched_producer = ProducerRepository.get_by_id(db_session, int(producer.id))
+        fetched_producer = ProducerRepository.get_by_id(
+            db_session, cast(int, producer.id)
+        )
 
         assert fetched_producer is not None
         assert fetched_producer.id == producer.id
@@ -100,10 +103,12 @@ class TestProducerRepository:
         Testa a remoção de um produtor pelo ID.
         """
         producer = ProducerRepository.create(db_session, "George Lucas")
-        assert ProducerRepository.delete(db_session, int(producer.id)) is True
+        assert ProducerRepository.delete(db_session, cast(int, producer.id)) is True
 
         # Tentar buscar o produtor removido
-        deleted_producer = ProducerRepository.get_by_id(db_session, int(producer.id))
+        deleted_producer = ProducerRepository.get_by_id(
+            db_session, cast(int, producer.id)
+        )
         assert deleted_producer is None
 
     def test_delete_producer_not_found(self, db_session: Session) -> None:
