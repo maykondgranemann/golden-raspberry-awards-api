@@ -1,0 +1,2 @@
+from .test_producer_repository import TestProducerRepository
+from .test_movie_repository import TestMovieRepository
