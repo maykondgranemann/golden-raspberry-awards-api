@@ -136,3 +136,29 @@ class TestCSVImporterServiceService:
         assert df_split["producers"].tolist() == [
             ["John Doe", "Jane Smith", "Bob Brown"]
         ]
+
+    def test_split_studios(self, df_sample: pd.DataFrame) -> None:
+        """
+        Testa a separação da coluna 'studios' em listas corretamente.
+        """
+        df_split: pd.DataFrame = CSVImporterService._split_studios(df_sample)
+        assert df_split["studios"].tolist() == [
+            ["Associated Film Distribution"],
+            ["Lorimar Productions", "United Artists"],
+            ["Universal Studios"],
+            ["20th Century Fox"],
+            ["20th Century Fox"],
+        ]
+
+    def test_split_studios_with_multiple_separators(self) -> None:
+        """
+        Testa se a separação dos estúdios funciona corretamente com
+        diferentes separadores.
+        """
+        df_test = pd.DataFrame(
+            {"studios": ["Warner Bros, Paramount and Sony Pictures"]}
+        )
+        df_split: pd.DataFrame = CSVImporterService._split_studios(df_test)
+        assert df_split["studios"].tolist() == [
+            ["Warner Bros", "Paramount", "Sony Pictures"]
+        ]
