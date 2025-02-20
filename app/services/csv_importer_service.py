@@ -2,7 +2,9 @@ import re
 import pandas as pd
 from typing import cast
 from typing import List, Dict, Set, Any, Union, IO
+from app.repositories import MovieRepository, ProducerRepository, StudioRepository
 from app.utils.logger import logger
+from sqlalchemy.orm import Session
 
 
 class CSVImporterService:
@@ -17,7 +19,7 @@ class CSVImporterService:
     SEPARATORS: List[str] = [",", " and "]
 
     @classmethod
-    def import_csv(cls, filepath: Union[str, IO[str]]) -> List[Dict[str, Any]]:
+    def import_csv(cls, db: Session, filepath: str) -> List[Dict[str, Any]]:
         """
         Lê um arquivo CSV, valida os dados e retorna uma lista de dicionários com os
         filmes.
@@ -39,8 +41,15 @@ class CSVImporterService:
         df = cls._split_producers(df)
         df = cls._split_studios(df)
 
-        logger.success(f"Importação do CSV concluída com {len(df)} registros válidos.")
-        return cast(List[Dict[str, Any]], df.to_dict(orient="records"))
+        movies_data = df.to_dict(orient="records")
+        logger.success(
+            f"Importação do CSV concluída com {len(movies_data)} registros válidos."
+        )
+
+        # Chama a função para salvar os dados no banco de dados
+        cls.save_to_database(db, movies_data)
+
+        return cast(List[Dict[str, Any]], movies_data)
 
     @staticmethod
     def _read_csv(filepath: Union[str, IO[str]]) -> pd.DataFrame:
@@ -178,3 +187,44 @@ class CSVImporterService:
         )
         logger.info("Coluna 'studios' dividida corretamente.")
         return df
+
+    @classmethod
+    def save_to_database(cls, db: Session, movies_data: List[Dict[str, Any]]) -> None:
+        """
+        Salva os filmes, produtores e estúdios no banco de dados e
+        estabelece os relacionamentos.
+
+        :param db: Sessão do banco de dados.
+        :param movies_data: Lista de dicionários representando os filmes importados.
+        """
+        logger.info("Salvando os dados no banco de dados...")
+
+        for movie_data in movies_data:
+            title = movie_data["title"]
+            year = movie_data["year"]
+            winner = movie_data["winner"]
+            producer_names = movie_data["producers"]
+            studio_names = movie_data["studios"]
+
+            # Criar ou recuperar o filme
+            movie = MovieRepository.create(db, title, year, winner)
+
+            if movie is None:
+                raise ValueError(
+                    f"Erro ao criar ou recuperar o filme: {title} ({year})"
+                )
+
+            # Criar ou recuperar produtores e associar ao filme
+            producers = ProducerRepository.create_multiple(db, producer_names)
+            movie.producers.extend(producers)
+
+            # Criar ou recuperar estúdios e associar ao filme
+            studios = StudioRepository.create_multiple(db, studio_names)
+            movie.studios.extend(studios)
+
+            db.commit()  # Confirma as operações no banco de dados
+            logger.info(f"Filme '{title}' ({year}) salvo com sucesso.")
+
+        logger.success(
+            "Todos os filmes e seus relacionamentos foram salvos no banco de dados."
+        )

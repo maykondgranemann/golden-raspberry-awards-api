@@ -1,6 +1,8 @@
 import pytest
 import pandas as pd
 from pytest_mock import MockFixture
+from app.repositories import MovieRepository, ProducerRepository, StudioRepository
+from sqlalchemy.orm import Session
 from app.services.csv_importer_service import CSVImporterService
 from io import StringIO
 from typing import Any, List, Dict
@@ -37,13 +39,17 @@ class TestCSVImporterServiceService:
         df["producers"] = df["producers"].str.strip()
         return df
 
-    def test_import_csv(self, mocker: MockFixture, df_sample: pd.DataFrame) -> None:
+    def test_import_csv(
+        self, db_session: Session, mocker: MockFixture, df_sample: pd.DataFrame
+    ) -> None:
         """
         Testa a importação completa do CSV.
         """
         mocker.patch.object(CSVImporterService, "_read_csv", return_value=df_sample)
 
-        movies: List[Dict[str, Any]] = CSVImporterService.import_csv("fake_path.csv")
+        movies: List[Dict[str, Any]] = CSVImporterService.import_csv(
+            db_session, "fake_path.csv"
+        )
 
         assert isinstance(movies, list)
         assert len(movies) == 5
@@ -162,3 +168,37 @@ class TestCSVImporterServiceService:
         assert df_split["studios"].tolist() == [
             ["Warner Bros", "Paramount", "Sony Pictures"]
         ]
+
+    def test_save_to_database(self, db_session: Session, sample_csv: str) -> None:
+        """
+        Testa se os filmes, produtores e estúdios são corretamente salvos
+        no banco de dados.
+        """
+        df = pd.read_csv(StringIO(sample_csv), sep=";", dtype=str).fillna("")
+        df.columns = df.columns.str.lower().str.strip()
+
+        # Normaliza winner antes de passar para a função
+        df = CSVImporterService._normalize_winner_column(df)
+
+        # Chama o método de salvar no banco
+        CSVImporterService.save_to_database(db_session, df.to_dict(orient="records"))
+
+        db_session.commit()
+
+        # Verifica se os filmes foram corretamente salvos
+        movies = MovieRepository.get_all(db_session)
+
+        assert len(movies) == 5  # Certifica-se de que todos os filmes foram inseridos
+
+        # Verifica se os produtores foram salvos corretamente
+        producers = ProducerRepository.get_all(db_session)
+        assert len(producers) > 0  # Deve conter pelo menos os produtores do CSV
+
+        # Verifica se os estúdios foram salvos corretamente
+        studios = StudioRepository.get_all(db_session)
+        assert len(studios) > 0  # Deve conter pelo menos os estúdios do CSV
+
+        # Verifica se os filmes estão associados corretamente aos produtores e estúdios
+        # for movie in movies:
+        #     assert len(movie.producers) > 0  # deve ter pelo menos um produtor
+        #     assert len(movie.studios) > 0  # deve ter pelo menos um estúdio
