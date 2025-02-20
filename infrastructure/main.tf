@@ -10,7 +10,7 @@ data "google_container_cluster" "existing" {
   location = "us-central1"
 }
 
-# 🔄 Cria o cluster apenas se ele ainda não existir
+# Cria o cluster apenas se ele ainda não existir
 resource "google_container_cluster" "primary" {
   count    = length(data.google_container_cluster.existing.name) > 0 ? 0 : 1
   name     = "golden-cluster"
