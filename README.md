@@ -5,7 +5,15 @@ API RESTful para processar e analisar os vencedores do prêmio **Golden Raspberr
 📌 **Projeto Público no GitHub:**  
 🔗 [Golden Raspberry Awards API - Projeto Kanban](https://github.com/users/maykondgranemann/projects/7)  
 
-Este projeto foi desenvolvido de forma **estruturada e incremental**, utilizando **Kanban**, **Pull Requests bem documentados** e **Integração Contínua (CI/CD)** via GitHub Actions, sendo **implantado diretamente no Kubernetes no Google Cloud Platform (GCP)** e disponível publicamente.
+Este projeto foi desenvolvido de forma **estruturada e incremental**, utilizando **Kanban**, **Pull Requests bem documentados** e **Integração Contínua (CI/CD)** via GitHub Actions. A aplicação está **implantada no Kubernetes no Google Cloud Platform (GCP)** e disponível publicamente.
+
+---
+
+## 🚀 **Recursos Implementados**
+✅ **Criação automática das tabelas e carregamento inicial do CSV** ao iniciar a aplicação  
+✅ **Endpoint para upload de CSV** e importação dinâmica de novos dados  
+✅ **CRUD completo para filmes, produtores e estúdios** (`/movies`, `/producers`, `/studios`)  
+✅ **Query parameters opcionais** para expandir produtores e estúdios na consulta de filmes  
 
 ---
 
@@ -15,7 +23,7 @@ Este projeto foi desenvolvido de forma **estruturada e incremental**, utilizando
 - **Banco de Dados:** SQLite
 - **Manipulação de Dados:** Pandas
 - **Tarefas Assíncronas:** Celery (backend em memória)
-- **Cache:** `functools.lru_cache` , caso fosse possivel instalar seria Redis
+- **Cache:** `functools.lru_cache`, caso fosse possível instalar, seria Redis
 - **Infraestrutura:** Docker, Kubernetes, Terraform e GCP
 - **CI/CD:** GitHub Actions
 - **Gerenciamento de Dependências:** Poetry
@@ -42,6 +50,11 @@ A API está disponível publicamente no GCP e pode ser acessada em:
 ### 📌 **Endpoints Disponíveis**
 - **`/health`** → Verifica se a API está rodando corretamente  
 - **`/docs`** → Documentação interativa gerada pelo FastAPI  
+- **`/csv/upload`** → Endpoint para upload de arquivos CSV  
+- **`/movies`** → CRUD de filmes  
+- **`/movies?expand=producers,studios`** → Retorna filmes com detalhes de produtores e estúdios  
+- **`/producers`** → CRUD de produtores  
+- **`/studios`** → CRUD de estúdios  
 
 ```bash
 curl http://107.178.211.239/health
