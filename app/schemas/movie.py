@@ -7,6 +7,7 @@ class MovieBase(BaseModel):
 
     title: str
     year: int
+    winner: bool
 
 
 class MovieCreate(MovieBase):

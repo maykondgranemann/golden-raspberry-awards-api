@@ -13,32 +13,34 @@ class TestMovieRepository:
         """
         Testa a criação de um novo filme.
         """
-        movie = MovieRepository.create(db_session, "Inception", 2010)
+        movie = MovieRepository.create(db_session, "Inception", 2010, True)
 
         assert movie is not None
         assert movie.title == "Inception"
         assert movie.year == 2010
+        assert movie.winner is True
         assert isinstance(movie, Movie)
 
     def test_create_existing_movie(self, db_session: Session) -> None:
         """
         Testa a criação de um filme que já existe no banco de dados.
         """
-        first_movie = MovieRepository.create(db_session, "The Matrix", 1999)
+        first_movie = MovieRepository.create(db_session, "The Matrix", 1999, False)
         assert first_movie is not None
 
         # Deve retornar o mesmo filme
-        second_movie = MovieRepository.create(db_session, "The Matrix", 1999)
+        second_movie = MovieRepository.create(db_session, "The Matrix", 1999, False)
         assert second_movie is not None
 
         assert first_movie.id == second_movie.id
         assert first_movie.title == "The Matrix"
+        assert first_movie.winner is False
 
     def test_get_by_id(self, db_session: Session) -> None:
         """
         Testa a busca de um filme pelo ID.
         """
-        movie = MovieRepository.create(db_session, "Interstellar", 2014)
+        movie = MovieRepository.create(db_session, "Interstellar", 2014, True)
         assert movie is not None
 
         fetched_movie = MovieRepository.get_by_id(db_session, cast(int, movie.id))
@@ -46,6 +48,7 @@ class TestMovieRepository:
 
         assert fetched_movie.id == movie.id
         assert fetched_movie.title == "Interstellar"
+        assert fetched_movie.winner is True
 
     def test_get_by_id_not_found(self, db_session: Session) -> None:
         """
@@ -58,11 +61,12 @@ class TestMovieRepository:
         """
         Testa a busca de um filme pelo título.
         """
-        MovieRepository.create(db_session, "The Dark Knight", 2008)
+        MovieRepository.create(db_session, "The Dark Knight", 2008, False)
         fetched_movie = MovieRepository.get_by_title(db_session, "The Dark Knight")
 
         assert fetched_movie is not None
         assert fetched_movie.title == "The Dark Knight"
+        assert fetched_movie.winner is False
 
     def test_get_by_title_not_found(self, db_session: Session) -> None:
         """
@@ -75,8 +79,8 @@ class TestMovieRepository:
         """
         Testa a obtenção de todos os filmes cadastrados.
         """
-        MovieRepository.create(db_session, "Gladiator", 2000)
-        MovieRepository.create(db_session, "Avatar", 2009)
+        MovieRepository.create(db_session, "Gladiator", 2000, True)
+        MovieRepository.create(db_session, "Avatar", 2009, False)
 
         all_movies: List[Movie] = MovieRepository.get_all(db_session)
 
@@ -87,7 +91,7 @@ class TestMovieRepository:
         """
         Testa a remoção de um filme pelo ID.
         """
-        movie = MovieRepository.create(db_session, "Titanic", 1997)
+        movie = MovieRepository.create(db_session, "Titanic", 1997, True)
         assert movie is not None
 
         assert MovieRepository.delete(db_session, cast(int, movie.id)) is True

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Boolean, Column, Integer, String
 from sqlalchemy.orm import relationship, Mapped
 from app.models.base import Base
 from app.models.movie_producer import movie_producer
@@ -18,6 +18,7 @@ class Movie(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, unique=True, nullable=False)
     year = Column(Integer, nullable=False)
+    winner = Column(Boolean, nullable=False, default=False)
 
     producers: Mapped[List["Producer"]] = relationship(
         "Producer", secondary=movie_producer, back_populates="movies"

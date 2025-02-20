@@ -7,7 +7,7 @@ class TestMovieModel:
 
     def test_create_movie(self, db_session: Session) -> None:
         """Testa a criação de um filme no banco de dados."""
-        movie = Movie(title="The Matrix", year=1999)
+        movie = Movie(title="The Matrix", year=1999, winner=True)
         db_session.add(movie)
         db_session.commit()
 
@@ -15,13 +15,14 @@ class TestMovieModel:
         assert fetched_movie is not None
         assert fetched_movie.title == "The Matrix"
         assert fetched_movie.year == 1999
+        assert fetched_movie.winner is True
 
     def test_create_multiple_movies(self, db_session: Session) -> None:
         """Testa a criação de múltiplos filmes no banco de dados."""
         movies = [
-            Movie(title="The Matrix", year=1999),
-            Movie(title="Gladiator", year=2010),
-            Movie(title="Interstellar", year=2014),
+            Movie(title="The Matrix", year=1999, winner=True),
+            Movie(title="Gladiator", year=2010, winner=False),
+            Movie(title="Interstellar", year=2014, winner=True),
         ]
 
         db_session.add_all(movies)
@@ -37,7 +38,7 @@ class TestMovieModel:
 
     def test_get_movie_by_id(self, db_session: Session) -> None:
         """Testa a busca de um filme pelo ID."""
-        movie = Movie(title="Gladiator", year=2000)
+        movie = Movie(title="Gladiator", year=2000, winner=True)
         db_session.add(movie)
         db_session.commit()
 
@@ -45,6 +46,7 @@ class TestMovieModel:
         assert fetched_movie is not None
         assert fetched_movie.id == movie.id
         assert fetched_movie.title == "Gladiator"
+        assert fetched_movie.winner is True
 
     def test_get_movie_by_title(self, db_session: Session) -> None:
         """Testa a busca de um filme pelo título."""

@@ -9,17 +9,18 @@ class TestMovieService:
 
     def test_create_movie(self, db_session: Session) -> None:
         """Testa a criação de um filme via service."""
-        movie_data = MovieCreate(title="Titanic", year=1997)
+        movie_data = MovieCreate(title="Titanic", year=1997, winner=True)
         movie = MovieService.create_movie(db_session, movie_data)
 
         assert movie is not None
         assert movie.title == "Titanic"
         assert movie.year == 1997
+        assert movie.winner is True
         assert isinstance(movie, MovieResponse)
 
     def test_get_movie_by_id(self, db_session: Session) -> None:
         """Testa a busca de um filme pelo ID."""
-        movie_data = MovieCreate(title="Interstellar", year=2014)
+        movie_data = MovieCreate(title="Interstellar", year=2014, winner=False)
         created_movie = MovieService.create_movie(db_session, movie_data)
         fetched_movie = MovieService.get_movie_by_id(
             db_session, cast(int, created_movie.id)
@@ -28,6 +29,7 @@ class TestMovieService:
         assert fetched_movie is not None
         assert fetched_movie.id == created_movie.id
         assert fetched_movie.title == "Interstellar"
+        assert fetched_movie.winner is False
 
     def test_get_movie_by_id_not_found(self, db_session: Session) -> None:
         """Testa a busca de um filme por ID inexistente."""
@@ -36,12 +38,13 @@ class TestMovieService:
 
     def test_get_movie_by_title(self, db_session: Session) -> None:
         """Testa a busca de um filme pelo título."""
-        movie_data = MovieCreate(title="The Dark Knight", year=2008)
+        movie_data = MovieCreate(title="The Dark Knight", year=2008, winner=False)
         MovieService.create_movie(db_session, movie_data)
 
         fetched_movie = MovieService.get_movie_by_title(db_session, "The Dark Knight")
         assert fetched_movie is not None
         assert fetched_movie.title == "The Dark Knight"
+        assert fetched_movie.winner is False
 
     def test_get_movie_by_title_not_found(self, db_session: Session) -> None:
         """Testa a busca de um filme por título inexistente."""
@@ -50,17 +53,23 @@ class TestMovieService:
 
     def test_get_all_movies(self, db_session: Session) -> None:
         """Testa a obtenção de todos os filmes."""
-        MovieService.create_movie(db_session, MovieCreate(title="Gladiator", year=2000))
-        MovieService.create_movie(db_session, MovieCreate(title="Avatar", year=2009))
+        MovieService.create_movie(
+            db_session, MovieCreate(title="Gladiator", year=2000, winner=True)
+        )
+        MovieService.create_movie(
+            db_session, MovieCreate(title="Avatar", year=2009, winner=False)
+        )
 
         all_movies = MovieService.get_all_movies(db_session)
 
         assert len(all_movies.movies) == 2
         assert all(isinstance(m, MovieResponse) for m in all_movies.movies)
+        assert all_movies.movies[0].winner is True
+        assert all_movies.movies[1].winner is False
 
     def test_delete_movie(self, db_session: Session) -> None:
         """Testa a remoção de um filme."""
-        movie_data = MovieCreate(title="Titanic", year=1997)
+        movie_data = MovieCreate(title="Titanic", year=1997, winner=True)
         created_movie = MovieService.create_movie(db_session, movie_data)
 
         assert (

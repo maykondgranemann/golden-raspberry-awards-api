@@ -10,7 +10,9 @@ class MovieService:
     @staticmethod
     def create_movie(db: Session, movie_data: MovieCreate) -> MovieResponse:
         """Cria um novo filme e retorna os dados formatados."""
-        movie = MovieRepository.create(db, movie_data.title, movie_data.year)
+        movie = MovieRepository.create(
+            db, movie_data.title, movie_data.year, movie_data.winner
+        )
 
         if movie is None:
             raise ValueError("Erro ao criar o filme. O repositório retornou None.")
@@ -19,6 +21,7 @@ class MovieService:
             id=cast(int, movie.id),
             title=cast(str, movie.title),
             year=cast(int, movie.year),
+            winner=cast(bool, movie.winner),
         )
 
     @staticmethod
@@ -28,8 +31,9 @@ class MovieService:
         if movie:
             return MovieResponse(
                 id=cast(int, movie.id),
-                title=str(movie.title),
+                title=cast(str, movie.title),
                 year=cast(int, movie.year),
+                winner=cast(bool, movie.winner),
             )
         return None
 
@@ -43,6 +47,7 @@ class MovieService:
             id=cast(int, movie.id),
             title=cast(str, movie.title),
             year=cast(int, movie.year),
+            winner=cast(bool, movie.winner),
         )
 
     @staticmethod
@@ -52,7 +57,10 @@ class MovieService:
         return MovieListResponse(
             movies=[
                 MovieResponse(
-                    id=cast(int, m.id), title=cast(str, m.title), year=cast(int, m.year)
+                    id=cast(int, m.id),
+                    title=cast(str, m.title),
+                    year=cast(int, m.year),
+                    winner=cast(bool, m.winner),
                 )
                 for m in movies
             ]

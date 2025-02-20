@@ -11,21 +11,25 @@ class MovieRepository:
     """
 
     @staticmethod
-    def create(db: Session, title: str, year: int) -> Optional[Movie]:
+    def create(db: Session, title: str, year: int, winner: bool) -> Optional[Movie]:
         """
-        Cria um novo filme no banco de dados.
+         Cria um novo filme e o salva no banco de dados.
 
-        :param db: Sessão do banco de dados.
-        :param title: Título do filme.
-        :param year: Ano de lançamento do filme.
-        :return: Objeto Movie criado ou encontrado.
+        Args:
+            db (Session): Sessão do banco de dados.
+            title (str): Título do filme.
+            year (int): Ano de lançamento do filme.
+            winner (bool): Indica se o filme foi vencedor do prêmio.
+
+        Returns:
+            Movie: Objeto Movie criado.
         """
-        movie: Optional[Movie] = Movie(title=title, year=year)
+        movie: Optional[Movie] = Movie(title=title, year=year, winner=winner)
         db.add(movie)
         try:
             db.commit()
             db.refresh(movie)
-            logger.info(f"Novo filme cadastrado: {title} ({year})")
+            logger.info(f"Novo filme cadastrado: {title} ({year}) - {winner}")
         except IntegrityError:
             db.rollback()
             movie = db.query(Movie).filter(Movie.title == title).first()
@@ -42,11 +46,14 @@ class MovieRepository:
     @staticmethod
     def get_by_id(db: Session, movie_id: int) -> Optional[Movie]:
         """
-        Busca um filme pelo ID.
+        Obtém um filme pelo ID.
 
-        :param db: Sessão do banco de dados.
-        :param movie_id: ID do filme.
-        :return: Objeto Movie se encontrado, caso contrário, None.
+        Args:
+            db (Session): Sessão do banco de dados.
+            movie_id (int): ID do filme.
+
+        Returns:
+            Optional[Movie]: O filme encontrado ou None se não existir.
         """
         try:
             return db.query(Movie).filter(Movie.id == movie_id).one()
