@@ -37,6 +37,7 @@ class CSVImporterService:
         df = cls._convert_data_types(df)
         df = cls._normalize_winner_column(df)
         df = cls._split_producers(df)
+        df = cls._split_studios(df)
 
         logger.success(f"Importação do CSV concluída com {len(df)} registros válidos.")
         return cast(List[Dict[str, Any]], df.to_dict(orient="records"))
@@ -154,4 +155,26 @@ class CSVImporterService:
         )
 
         logger.info("Coluna 'producers' dividida corretamente.")
+        return df
+
+    @classmethod
+    def _split_studios(cls, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Divide a coluna 'studios' em listas de estudios individuais.
+
+        :param df: DataFrame contendo os dados do CSV.
+        :return: DataFrame com a coluna 'studios' ajustada para listas de nomes.
+        """
+        split_pattern: str = (
+            r"\s*" + r"\s*|\s*".join(map(re.escape, cls.SEPARATORS)) + r"\s*"
+        )
+
+        df["studios"] = df["studios"].apply(
+            lambda x: [
+                studio.strip()
+                for studio in re.split(split_pattern, x)
+                if studio.strip()
+            ]
+        )
+        logger.info("Coluna 'studios' dividida corretamente.")
         return df

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from app.repositories.movie_repository import MovieRepository
 from app.schemas.movie import MovieCreate, MovieResponse, MovieListResponse
-from typing import Optional, List, cast
+from typing import Optional, cast
 
 
 class MovieService:
