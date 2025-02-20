@@ -1,3 +1,6 @@
+from io import StringIO
+import pandas as pd
+import os
 from fastapi.testclient import TestClient
 import pytest
 import datetime
@@ -12,6 +15,8 @@ from app.main import app
 
 
 TESTS_CACHE_FILE = "tests/.last_test_run"
+# Ativar modo de teste
+os.environ["TEST_MODE"] = "true"
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -66,3 +71,40 @@ def client(db_session: Session) -> Iterator[TestClient]:
         yield test_client
 
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="class")
+def sample_csv() -> str:
+    """
+    Retorna um exemplo de CSV em formato de string para testes.
+    """
+    return """year;title;studios;producers;winner
+1980;Can't Stop the Music;Associated Film Distribution;Allan Carr;yes
+1980;Cruising;Lorimar Productions, United Artists;Jerry Weintraub;
+1983;The Lonely Lady;Universal Studios;Robert R. Weston;yes
+1983;Two of a Kind;20th Century Fox;Roger M. Rothstein and Joe Wizan;
+1984;Rhinestone;20th Century Fox;Marvin Worth and Howard Smith;
+"""
+
+
+@pytest.fixture(scope="class")
+def df_sample(sample_csv: str) -> pd.DataFrame:
+    """
+    Retorna um DataFrame baseado no CSV de exemplo.
+    """
+    df: pd.DataFrame = pd.read_csv(StringIO(sample_csv), sep=";", dtype=str).fillna("")
+    df.columns = df.columns.str.lower().str.strip()
+    return df
+
+
+@pytest.fixture
+def csv_content() -> bytes:
+    """
+    Retorna um conteúdo de CSV válido como bytes.
+    """
+    return (
+        b"year;title;studios;producers;winner\n"
+        b"1980;Can't Stop the Music;Associated Film Distribution;Allan Carr;yes\n"
+        b"1983;The Lonely Lady;Universal Studios;Robert R. Weston;yes\n"
+        b"1984;Rhinestone;20th Century Fox;Marvin Worth and Howard Smith;\n"
+    )

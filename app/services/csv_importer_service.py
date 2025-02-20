@@ -1,230 +1,199 @@
+import os
 import re
+from sqlalchemy.exc import IntegrityError
 import pandas as pd
-from typing import cast
-from typing import List, Dict, Set, Any, Union, IO
+from typing import List
+from sqlalchemy.orm import Session
+from app.schemas.csv_importer import CSVImportRequest, CSVImportResponse
 from app.repositories import MovieRepository, ProducerRepository, StudioRepository
 from app.utils.logger import logger
-from sqlalchemy.orm import Session
 
 
 class CSVImporterService:
     """
-    Classe responsável por importar, validar e processar arquivos CSV
-    contendo informações
-    sobre filmes e seus respectivos produtores premiados.
+    Service responsável por processar e importar dados de um arquivo CSV
+    contendo informações de filmes.
     """
 
-    REQUIRED_COLUMNS: Set[str] = {"year", "producers", "winner"}
-    # Facilmente expansível para novos separadores
-    SEPARATORS: List[str] = [",", " and "]
+    total_inserted: int = 0  # Contador de filmes inseridos
+    ignored_count: int = 0  # Contador de filmes ignorados (duplicados)
+
+    REQUIRED_COLUMNS = {"year", "producers", "winner"}
+    SEPARATORS = [",", " and "]  # Pode ser expandido se necessário
 
     @classmethod
-    def import_csv(cls, db: Session, filepath: str) -> List[Dict[str, Any]]:
+    def import_csv(cls, db: Session, file_content: str) -> CSVImportResponse:
         """
-        Lê um arquivo CSV, valida os dados e retorna uma lista de dicionários com os
-        filmes.
+        Processa o conteúdo do CSV e salva os dados no banco.
 
-        :param filepath: Caminho para o arquivo CSV ou objeto IO.
-        :return: Lista de dicionários representando os filmes e seus respectivos dados.
-        :raises ValueError: Se ocorrer um erro na leitura do arquivo ou se
-        os dados forem inválidos.
+        :param db: Sessão do banco de dados.
+        :param file_content: Conteúdo do CSV como string.
+        :return: CSVImportResponse contendo o número de filmes importados.
         """
+        logger.info("Iniciando importação do CSV.")
 
-        logger.info(f"Iniciando importação do CSV: {filepath}")
+        df = cls._load_csv(file_content)
+        df = cls._validate_and_prepare(df)
 
-        df: pd.DataFrame = cls._read_csv(filepath)
-        df = cls._validate_columns(df)
-        df = cls._normalize_columns(df)
-        df = cls._filter_valid_rows(df)
-        df = cls._convert_data_types(df)
-        df = cls._normalize_winner_column(df)
-        df = cls._split_producers(df)
-        df = cls._split_studios(df)
+        movies_data = [
+            CSVImportRequest(
+                title=row["title"],
+                year=row["year"],
+                winner=row["winner"],
+                producers=row["producers"],
+                studios=row["studios"],
+            )
+            for _, row in df.iterrows()
+        ]
 
-        movies_data = df.to_dict(orient="records")
-        logger.success(
-            f"Importação do CSV concluída com {len(movies_data)} registros válidos."
+        cls._save_to_database(db, movies_data)
+
+        return CSVImportResponse(
+            message="Importação concluída com sucesso!",
+            imported_movies=cls.total_inserted,
+            ignored_movies=cls.ignored_count,
         )
 
-        # Chama a função para salvar os dados no banco de dados
-        cls.save_to_database(db, movies_data)
-
-        return cast(List[Dict[str, Any]], movies_data)
-
     @staticmethod
-    def _read_csv(filepath: Union[str, IO[str]]) -> pd.DataFrame:
-        """
-        Lê um arquivo CSV e retorna um DataFrame Pandas.
-
-        :param filepath: Caminho para o arquivo CSV ou objeto IO.
-        :return: DataFrame contendo os dados do arquivo CSV.
-        :raises ValueError: Se ocorrer um erro ao ler o arquivo.
-        """
+    def _load_csv(file_content: str) -> pd.DataFrame:
+        """Carrega o CSV a partir de uma string e retorna um DataFrame."""
         try:
-            logger.info(f"Lendo arquivo CSV: {filepath}")
-            df = pd.read_csv(filepath, sep=None, engine="python", dtype=str).fillna("")
+            df = pd.read_csv(
+                pd.io.common.StringIO(file_content),
+                sep=None,
+                engine="python",
+                dtype=str,
+            ).fillna("")
             logger.info("Arquivo CSV carregado com sucesso.")
             return df
         except Exception as e:
             logger.error(f"Erro ao ler o arquivo CSV: {e}")
             raise ValueError(f"Erro ao ler o arquivo CSV: {e}")
 
-    @classmethod
-    def _validate_columns(cls, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Valida se as colunas essenciais existem no DataFrame.
-
-        :param df: DataFrame contendo os dados do CSV.
-        :return: DataFrame validado.
-        :raises ValueError: Se colunas essenciais estiverem ausentes.
-        """
-        missing_columns: Set[str] = cls.REQUIRED_COLUMNS - set(
-            df.columns.str.lower().str.strip()
-        )
-        if missing_columns:
-            logger.error(f"Colunas ausentes no CSV: {missing_columns}")
-            raise ValueError(f"Arquivo CSV inválido! Faltando: {missing_columns}")
-
-        logger.info("Todas as colunas essenciais estão presentes.")
-        return df
-
     @staticmethod
-    def _normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    def _load_csv_from_file(filepath: str) -> pd.DataFrame:
         """
-        Renomeia as colunas para um formato padronizado.
+        Carrega um CSV a partir de um caminho no sistema de arquivos.
 
-        :param df: DataFrame contendo os dados do CSV.
-        :return: DataFrame com colunas normalizadas.
+        :param filepath: Caminho absoluto do arquivo CSV.
+        :return: DataFrame contendo os dados.
         """
-        df.columns = df.columns.str.lower().str.strip()
-        logger.info("Colunas normalizadas.")
-        return df
+        if not os.path.exists(filepath):
+            logger.warning(f"Arquivo CSV '{filepath}' não encontrado.")
+            return pd.DataFrame()
 
-    @staticmethod
-    def _filter_valid_rows(df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Filtra apenas as linhas que possuem ano numérico e pelo menos um
-        produtor válido.
-
-        :param df: DataFrame contendo os dados do CSV.
-        :return: DataFrame filtrado.
-        """
-        before_count = len(df)
-        df = df[df["year"].str.isnumeric() & df["producers"].str.strip().ne("")]
-        after_count = len(df)
-        rm_count = before_count - after_count
-
-        logger.info(f"Linhas filtradas: {rm_count} removidas, {after_count} válidas.")
-        return df
-
-    @staticmethod
-    def _convert_data_types(df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Converte a coluna 'year' para inteiro.
-
-        :param df: DataFrame contendo os dados do CSV.
-        :return: DataFrame com tipos convertidos.
-        """
-        df["year"] = df["year"].astype(int)
-
-        logger.info("Coluna 'year' convertida para inteiro.")
-        return df
-
-    @staticmethod
-    def _normalize_winner_column(df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Normaliza a coluna 'winner', convertendo valores para booleano.
-
-        :param df: DataFrame contendo os dados do CSV.
-        :return: DataFrame com valores booleanos na coluna 'winner'.
-        """
-        df["winner"] = df["winner"].str.lower().str.strip().eq("yes")
-
-        logger.info("Coluna 'winner' normalizada para booleano.")
-        return df
+        try:
+            logger.info(f"Lendo CSV do arquivo: {filepath}")
+            df = pd.read_csv(filepath, sep=None, engine="python", dtype=str).fillna("")
+            logger.info("Arquivo CSV carregado com sucesso.")
+            return df
+        except Exception as e:
+            logger.error(f"Erro ao ler o arquivo '{filepath}': {e}")
+            raise ValueError(f"Erro ao ler o arquivo '{filepath}': {e}")
 
     @classmethod
-    def _split_producers(cls, df: pd.DataFrame) -> pd.DataFrame:
+    def load_csv_on_startup(cls, db: Session, directory: str = "data") -> None:
         """
-        Divide a coluna 'producers' em listas de produtores individuais.
-
-        :param df: DataFrame contendo os dados do CSV.
-        :return: DataFrame com a coluna 'producers' ajustada para listas de nomes.
-        """
-        split_pattern: str = (
-            r"\s*" + r"\s*|\s*".join(map(re.escape, cls.SEPARATORS)) + r"\s*"
-        )
-
-        df["producers"] = df["producers"].apply(
-            lambda x: [
-                producer.strip()
-                for producer in re.split(split_pattern, x)
-                if producer.strip()
-            ]
-        )
-
-        logger.info("Coluna 'producers' dividida corretamente.")
-        return df
-
-    @classmethod
-    def _split_studios(cls, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Divide a coluna 'studios' em listas de estudios individuais.
-
-        :param df: DataFrame contendo os dados do CSV.
-        :return: DataFrame com a coluna 'studios' ajustada para listas de nomes.
-        """
-        split_pattern: str = (
-            r"\s*" + r"\s*|\s*".join(map(re.escape, cls.SEPARATORS)) + r"\s*"
-        )
-
-        df["studios"] = df["studios"].apply(
-            lambda x: [
-                studio.strip()
-                for studio in re.split(split_pattern, x)
-                if studio.strip()
-            ]
-        )
-        logger.info("Coluna 'studios' dividida corretamente.")
-        return df
-
-    @classmethod
-    def save_to_database(cls, db: Session, movies_data: List[Dict[str, Any]]) -> None:
-        """
-        Salva os filmes, produtores e estúdios no banco de dados e
-        estabelece os relacionamentos.
+        Procura arquivos CSV na pasta `data/` e carrega o primeiro encontrado.
 
         :param db: Sessão do banco de dados.
-        :param movies_data: Lista de dicionários representando os filmes importados.
+        :param directory: Diretório onde os CSVs devem ser buscados.
         """
-        logger.info("Salvando os dados no banco de dados...")
+        if not os.path.exists(directory):
+            logger.warning(f"Pasta '{directory}' não encontrada.")
+            return
+
+        csv_files = [f for f in os.listdir(directory) if f.endswith(".csv")]
+        if not csv_files:
+            logger.info("Nenhum arquivo CSV encontrado para importação automática.")
+            return
+
+        filepath = os.path.join(
+            directory, csv_files[0]
+        )  # Usa o primeiro CSV encontrado
+        logger.info(f"Importando CSV automaticamente: {filepath}")
+
+        df = cls._load_csv_from_file(filepath)
+        if df.empty:
+            logger.warning(f"Arquivo CSV '{filepath}' está vazio ou inválido.")
+            return
+
+        df = cls._validate_and_prepare(df)
+        movies_data = [
+            CSVImportRequest(
+                title=row["title"],
+                year=row["year"],
+                winner=row["winner"],
+                producers=row["producers"],
+                studios=row["studios"],
+            )
+            for _, row in df.iterrows()
+        ]
+
+        cls._save_to_database(db, movies_data)
+        logger.success(
+            f"Importação automática concluída: {len(movies_data)} filmes importados."
+        )
+
+    @classmethod
+    def _validate_and_prepare(cls, df: pd.DataFrame) -> pd.DataFrame:
+        """Valida e transforma os dados do CSV."""
+        missing_columns = cls.REQUIRED_COLUMNS - set(df.columns.str.lower().str.strip())
+        if missing_columns:
+            raise ValueError(f"Colunas ausentes: {missing_columns}")
+
+        df.columns = df.columns.str.lower().str.strip()
+        df = df[df["year"].str.isnumeric()]
+        df["year"] = df["year"].astype(int)
+        df["winner"] = df["winner"].str.lower().str.strip().eq("yes")
+
+        df["producers"] = df["producers"].apply(lambda x: cls._split_values(x))
+        df["studios"] = df["studios"].apply(lambda x: cls._split_values(x))
+
+        return df
+
+    @staticmethod
+    def _split_values(value: str) -> List[str]:
+        """Divide valores separados por delimitadores comuns."""
+        separators = [",", " and "]
+        pattern = r"\s*" + r"\s*|\s*".join(map(re.escape, separators)) + r"\s*"
+        return [v.strip() for v in re.split(pattern, value) if v.strip()]
+
+    @classmethod
+    def _save_to_database(
+        cls, db: Session, movies_data: List[CSVImportRequest]
+    ) -> None:
+        """Salva os filmes no banco de dados e contabiliza
+        os ignorados por duplicação."""
+        cls.ignored_count = 0  # Contador de filmes ignorados
 
         for movie_data in movies_data:
-            title = movie_data["title"]
-            year = movie_data["year"]
-            winner = movie_data["winner"]
-            producer_names = movie_data["producers"]
-            studio_names = movie_data["studios"]
-
-            # Criar ou recuperar o filme
-            movie = MovieRepository.create(db, title, year, winner)
-
-            if movie is None:
-                raise ValueError(
-                    f"Erro ao criar ou recuperar o filme: {title} ({year})"
+            try:
+                # Tenta criar o filme, se já existir a exceção é capturada
+                movie = MovieRepository.create(
+                    db, movie_data.title, movie_data.year, movie_data.winner
                 )
 
-            # Criar ou recuperar produtores e associar ao filme
-            producers = ProducerRepository.create_multiple(db, producer_names)
-            movie.producers.extend(producers)
+                # Criar produtores e associar ao filme
+                producers = ProducerRepository.create_multiple(db, movie_data.producers)
+                movie.producers.extend(producers)
 
-            # Criar ou recuperar estúdios e associar ao filme
-            studios = StudioRepository.create_multiple(db, studio_names)
-            movie.studios.extend(studios)
+                # Criar estúdios e associar ao filme
+                studios = StudioRepository.create_multiple(db, movie_data.studios)
+                movie.studios.extend(studios)
 
-            db.commit()  # Confirma as operações no banco de dados
-            logger.info(f"Filme '{title}' ({year}) salvo com sucesso.")
+                db.commit()  # Salva no banco
 
+            except IntegrityError:
+                db.rollback()  # Desfaz a tentativa de inserção
+                cls.ignored_count += 1  # Incrementa o contador
+                logger.warning(
+                    f"Filme '{movie_data.title}' ({movie_data.year}) "
+                    "já existente. Ignorado."
+                )
+
+        cls.total_inserted = len(movies_data) - cls.ignored_count
         logger.success(
-            "Todos os filmes e seus relacionamentos foram salvos no banco de dados."
+            f"{cls.total_inserted} filmes inseridos, "
+            "{cls.ignored_count} ignorados por duplicação."
         )

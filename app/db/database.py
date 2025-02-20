@@ -5,6 +5,8 @@ from app.config import Config
 from typing import Iterator
 from sqlalchemy.orm import Session
 
+from app.models.base import Base
+
 
 # Criar engine do banco
 engine = create_engine(Config.DATABASE_URL, connect_args={"check_same_thread": False})
@@ -32,3 +34,9 @@ def test_database_connection() -> bool:
     except Exception as e:
         logger.error(f"Erro ao conectar ao banco de dados: {e}")
         return False
+
+
+def create_tables() -> None:
+    """Cria as tabelas automaticamente, se ainda não existirem."""
+    Base.metadata.create_all(bind=engine)
+    logger.info("Tabelas criadas com sucesso!")
