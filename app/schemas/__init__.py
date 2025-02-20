@@ -10,3 +10,9 @@ from .movie import (
     MovieResponse,
     MovieListResponse,
 )
+from .studio import (
+    StudioBase,
+    StudioCreate,
+    StudioResponse,
+    StudioListResponse,
+)
