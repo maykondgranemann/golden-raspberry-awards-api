@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from app.models.movie import Movie
 from typing import List, Optional
@@ -11,7 +11,7 @@ class MovieRepository:
     """
 
     @staticmethod
-    def create(db: Session, title: str, year: int, winner: bool) -> Optional[Movie]:
+    def create(db: Session, title: str, year: int, winner: bool) -> Movie:
         """
          Cria um novo filme e o salva no banco de dados.
 
@@ -22,26 +22,28 @@ class MovieRepository:
             winner (bool): Indica se o filme foi vencedor do prêmio.
 
         Returns:
-            Movie: Objeto Movie criado.
+            Movie: Objeto Movie criado ou existente.
         """
-        movie: Optional[Movie] = Movie(title=title, year=year, winner=winner)
+        movie = Movie(title=title, year=year, winner=winner)
         db.add(movie)
         try:
             db.commit()
             db.refresh(movie)
             logger.info(f"Novo filme cadastrado: {title} ({year}) - {winner}")
+            return movie
         except IntegrityError:
             db.rollback()
-            movie = db.query(Movie).filter(Movie.title == title).first()
-            if movie:
+            existing_movie = db.query(Movie).filter(Movie.title == title).first()
+            if existing_movie:
                 logger.warning(
                     f"Filme '{title}' já existe, retornando instância existente."
                 )
+                return existing_movie
             else:
                 logger.error(f"Erro inesperado ao inserir filme '{title}'.")
-                raise  # Relança a exceção se o filme não for encontrado
-
-        return movie
+                raise ValueError(
+                    f"Erro ao criar ou recuperar o filme: {title} ({year})"
+                )
 
     @staticmethod
     def get_by_id(db: Session, movie_id: int) -> Optional[Movie]:
@@ -73,14 +75,23 @@ class MovieRepository:
         return db.query(Movie).filter(Movie.title == title).first()
 
     @staticmethod
-    def get_all(db: Session) -> List[Movie]:
+    def get_all(db: Session, expand: List[str] = []) -> List[Movie]:
         """
-        Retorna todos os filmes cadastrados no banco.
+        Retorna todos os filmes do banco, podendo opcionalmente carregar
+        produtores e estúdios.
 
         :param db: Sessão do banco de dados.
+        :param expand: Lista de expansões desejadas, ex: ["producers", "studios"]
         :return: Lista de objetos Movie.
         """
-        return db.query(Movie).all()
+        query = db.query(Movie)
+
+        if "producers" in expand:
+            query = query.options(joinedload(Movie.producers))
+        if "studios" in expand:
+            query = query.options(joinedload(Movie.studios))
+
+        return query.all()
 
     @staticmethod
     def delete(db: Session, movie_id: int) -> bool:

@@ -1,6 +1,10 @@
 from sqlalchemy.orm import Session
 from app.models.movie import Movie
+from app.models.producer import Producer
+from app.models.studio import Studio
 from app.repositories.movie_repository import MovieRepository
+from app.repositories.producer_repository import ProducerRepository
+from app.repositories.studio_repository import StudioRepository
 from typing import List, cast
 
 
@@ -86,6 +90,36 @@ class TestMovieRepository:
 
         assert len(all_movies) == 2
         assert all(isinstance(m, Movie) for m in all_movies)
+
+    def test_get_all_with_expand(self, db_session: Session) -> None:
+        """
+        Testa a obtenção de todos os filmes cadastrados com expansão de relacionamentos.
+        """
+        # Criar filme
+        movie = MovieRepository.create(db_session, "Titanic", 1997, True)
+
+        # Criar e associar produtores
+        producers = ProducerRepository.create_multiple(db_session, ["James Cameron"])
+        movie.producers.extend(producers)
+
+        # Criar e associar estúdios
+        studios = StudioRepository.create_multiple(db_session, ["Paramount Pictures"])
+        movie.studios.extend(studios)
+
+        db_session.commit()  # Persistir as associações
+
+        all_movies: List[Movie] = MovieRepository.get_all(
+            db_session, expand=["producers", "studios"]
+        )
+
+        assert len(all_movies) > 0
+        assert all(isinstance(m, Movie) for m in all_movies)
+
+        # Verificar se o primeiro filme recuperado tem os relacionamentos preenchidos
+        assert len(all_movies[0].producers) > 0
+        assert len(all_movies[0].studios) > 0
+        assert all(isinstance(p, Producer) for p in all_movies[0].producers)
+        assert all(isinstance(s, Studio) for s in all_movies[0].studios)
 
     def test_delete_movie(self, db_session: Session) -> None:
         """

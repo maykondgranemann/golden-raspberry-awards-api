@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.api.handlers.movie_handler import MovieHandler
@@ -28,9 +28,15 @@ def get_movie_by_title(title: str, db: Session = Depends(get_db)) -> MovieRespon
 
 
 @router.get("/", response_model=MovieListResponse)
-def get_all_movies(db: Session = Depends(get_db)) -> MovieListResponse:
-    """Obtém todos os filmes cadastrados."""
-    return MovieHandler.get_all_movies(db)
+def get_all_movies(
+    db: Session = Depends(get_db),
+    expand: str = Query(
+        None, description="Expandir detalhes (ex: 'producers,studios')"
+    ),
+) -> MovieListResponse:
+    """Obtém todos os filmes cadastrados, com opção de expandir
+    produtores e estúdios."""
+    return MovieHandler.get_all_movies(db, expand)
 
 
 @router.delete("/{movie_id}", status_code=204)

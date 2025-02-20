@@ -8,6 +8,8 @@ from typing import Optional
 class MovieHandler:
     """Camada de manipulação de requisições para Movies."""
 
+    ALLOWED_EXPANDS = {"producers", "studios"}
+
     @staticmethod
     def create_movie(db: Session, movie_data: MovieCreate) -> MovieResponse:
         """Cria um novo filme e retorna os dados formatados."""
@@ -30,9 +32,24 @@ class MovieHandler:
         return movie
 
     @staticmethod
-    def get_all_movies(db: Session) -> MovieListResponse:
-        """Obtém todos os filmes cadastrados."""
-        return MovieService.get_all_movies(db)
+    def get_all_movies(db: Session, expand: str) -> MovieListResponse:
+        """
+        Obtém todos os filmes, permitindo expandir os relacionamentos.
+
+        :param db: Sessão do banco de dados.
+        :param expand: String com os campos a serem expandidos, separados por vírgula.
+        :return: Lista de filmes.
+        """
+        expand_list = expand.split(",") if expand else []
+        invalid_expands = set(expand_list) - MovieHandler.ALLOWED_EXPANDS
+
+        if invalid_expands:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Campos inválidos em expand: {', '.join(invalid_expands)}",
+            )
+
+        return MovieService.get_all_movies(db, expand_list)
 
     @staticmethod
     def delete_movie(db: Session, movie_id: int) -> None:

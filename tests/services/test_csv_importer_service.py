@@ -197,8 +197,3 @@ class TestCSVImporterServiceService:
         # Verifica se os estúdios foram salvos corretamente
         studios = StudioRepository.get_all(db_session)
         assert len(studios) > 0  # Deve conter pelo menos os estúdios do CSV
-
-        # Verifica se os filmes estão associados corretamente aos produtores e estúdios
-        # for movie in movies:
-        #     assert len(movie.producers) > 0  # deve ter pelo menos um produtor
-        #     assert len(movie.studios) > 0  # deve ter pelo menos um estúdio

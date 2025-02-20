@@ -1,7 +1,15 @@
 from sqlalchemy.orm import Session
 from app.repositories.movie_repository import MovieRepository
-from app.schemas.movie import MovieCreate, MovieResponse, MovieListResponse
-from typing import Optional, cast
+from app.schemas.movie import (
+    MovieCreate,
+    MovieDetailedResponse,
+    MovieResponse,
+    MovieListResponse,
+)
+from typing import List, Optional, cast
+
+from app.schemas.producer import ProducerResponse
+from app.schemas.studio import StudioResponse
 
 
 class MovieService:
@@ -51,16 +59,39 @@ class MovieService:
         )
 
     @staticmethod
-    def get_all_movies(db: Session) -> MovieListResponse:
-        """Obtém todos os filmes cadastrados no banco."""
-        movies = MovieRepository.get_all(db)
+    def get_all_movies(db: Session, expand: List[str]) -> MovieListResponse:
+        """
+        Obtém todos os filmes, permitindo expandir os relacionamentos.
+
+        :param db: Sessão do banco de dados.
+        :param expand: Lista de expansões desejadas, ex: ["producers", "studios"]
+        :return: Lista de filmes com ou sem os relacionamentos.
+        """
+        movies = MovieRepository.get_all(db, expand)
+
         return MovieListResponse(
             movies=[
-                MovieResponse(
+                MovieDetailedResponse(
                     id=cast(int, m.id),
                     title=cast(str, m.title),
                     year=cast(int, m.year),
                     winner=cast(bool, m.winner),
+                    producers=(
+                        [
+                            ProducerResponse(id=cast(int, p.id), name=str(p.name))
+                            for p in m.producers
+                        ]
+                        if "producers" in expand
+                        else None
+                    ),
+                    studios=(
+                        [
+                            StudioResponse(id=cast(int, s.id), name=str(s.name))
+                            for s in m.studios
+                        ]
+                        if "studios" in expand
+                        else None
+                    ),
                 )
                 for m in movies
             ]

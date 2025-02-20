@@ -1,5 +1,8 @@
 from pydantic import BaseModel, ConfigDict
-from typing import List
+from typing import Dict, List, Optional
+
+from app.schemas.producer import ProducerResponse
+from app.schemas.studio import StudioResponse
 
 
 class MovieBase(BaseModel):
@@ -24,7 +27,12 @@ class MovieResponse(MovieBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-class MovieListResponse(BaseModel):
-    """Schema para resposta de lista de filmes."""
+class MovieDetailedResponse(MovieResponse):
+    """Schema de resposta detalhado para filmes, incluindo produtores e estúdios."""
 
-    movies: List[MovieResponse]
+    producers: Optional[List[ProducerResponse]] = None
+    studios: Optional[List[StudioResponse]] = None
+
+
+class MovieListResponse(BaseModel):
+    movies: List[MovieDetailedResponse]

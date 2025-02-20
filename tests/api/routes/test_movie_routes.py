@@ -1,4 +1,16 @@
+from typing import cast
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
+
+from app.repositories.movie_repository import MovieRepository
+from app.repositories.producer_repository import ProducerRepository
+from app.repositories.studio_repository import StudioRepository
+from app.schemas.movie import MovieCreate
+from app.schemas.producer import ProducerCreate
+from app.schemas.studio import StudioCreate
+from app.services.movie_service import MovieService
+from app.services.producer_service import ProducerService
+from app.services.studio_service import StudioService
 
 
 class TestMovieRoutes:
@@ -92,3 +104,116 @@ class TestMovieRoutes:
     def test_delete_movie_not_found(self, client: TestClient) -> None:
         """Testa a remoção de um filme inexistente."""
         assert client.delete("/movies/9999").status_code == 404
+
+    def test_get_all_movies_with_expand_producers(
+        self, client: TestClient, db_session: Session
+    ) -> None:
+        """Testa a obtenção de filmes expandindo apenas os produtores via API."""
+        movie_data = MovieCreate(title="Inception", year=2010, winner=True)
+        created_movie = MovieService.create_movie(cast(Session, db_session), movie_data)
+
+        producer_data = ProducerCreate(name="Christopher Nolan")
+        ProducerService.create_producer(cast(Session, db_session), producer_data)
+
+        movie = MovieRepository.get_by_id(
+            cast(Session, db_session), cast(int, created_movie.id)
+        )
+        assert movie is not None
+
+        producer_obj = ProducerRepository.get_by_name(
+            cast(Session, db_session), "Christopher Nolan"
+        )
+        assert producer_obj is not None
+
+        movie.producers.append(producer_obj)
+        cast(Session, db_session).commit()
+
+        response = client.get("/movies/?expand=producers")
+        assert response.status_code == 200
+
+        data = response.json()["movies"]
+        assert len(data) > 0
+        assert "producers" in data[0]
+        assert len(data[0]["producers"]) == 1
+        assert data[0]["producers"][0]["name"] == "Christopher Nolan"
+
+    def test_get_all_movies_with_expand_studios(
+        self, client: TestClient, db_session: Session
+    ) -> None:
+        """Testa a obtenção de filmes expandindo apenas os estúdios via API."""
+        movie_data = MovieCreate(title="The Matrix", year=1999, winner=False)
+        created_movie = MovieService.create_movie(cast(Session, db_session), movie_data)
+
+        studio_data = StudioCreate(name="Warner Bros")
+        StudioService.create_studio(cast(Session, db_session), studio_data)
+
+        movie = MovieRepository.get_by_id(
+            cast(Session, db_session), cast(int, created_movie.id)
+        )
+        assert movie is not None
+
+        studio_obj = StudioRepository.get_by_name(
+            cast(Session, db_session), "Warner Bros"
+        )
+        assert studio_obj is not None
+
+        movie.studios.append(studio_obj)
+        cast(Session, db_session).commit()
+
+        response = client.get("/movies/?expand=studios")
+        assert response.status_code == 200
+
+        data = response.json()["movies"]
+        assert len(data) > 0
+        assert "studios" in data[0]
+        assert len(data[0]["studios"]) == 1
+        assert data[0]["studios"][0]["name"] == "Warner Bros"
+
+    def test_get_all_movies_with_expand_producers_and_studios(
+        self, client: TestClient, db_session: Session
+    ) -> None:
+        """
+        Testa a obtenção de filmes expandindo produtores e estúdios
+        simultaneamente via API.
+        """
+        movie_data = MovieCreate(title="Interstellar", year=2014, winner=True)
+        created_movie = MovieService.create_movie(cast(Session, db_session), movie_data)
+
+        producer_data = ProducerCreate(name="Christopher Nolan")
+        ProducerService.create_producer(cast(Session, db_session), producer_data)
+
+        studio_data = StudioCreate(name="Paramount Pictures")
+        StudioService.create_studio(cast(Session, db_session), studio_data)
+
+        movie = MovieRepository.get_by_id(
+            cast(Session, db_session), cast(int, created_movie.id)
+        )
+        assert movie is not None
+
+        producer_obj = ProducerRepository.get_by_name(
+            cast(Session, db_session), "Christopher Nolan"
+        )
+        studio_obj = StudioRepository.get_by_name(
+            cast(Session, db_session), "Paramount Pictures"
+        )
+
+        assert producer_obj is not None
+        assert studio_obj is not None
+
+        movie.producers.append(producer_obj)
+        movie.studios.append(studio_obj)
+        cast(Session, db_session).commit()
+
+        response = client.get("/movies/?expand=producers,studios")
+        assert response.status_code == 200
+
+        data = response.json()["movies"]
+        assert len(data) > 0
+
+        assert "producers" in data[0]
+        assert len(data[0]["producers"]) == 1
+        assert data[0]["producers"][0]["name"] == "Christopher Nolan"
+
+        assert "studios" in data[0]
+        assert len(data[0]["studios"]) == 1
+        assert data[0]["studios"][0]["name"] == "Paramount Pictures"
