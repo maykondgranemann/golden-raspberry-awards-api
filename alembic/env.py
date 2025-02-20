@@ -21,6 +21,7 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 from app.models import Producer
 from app.models import Movie
+from app.models import Studio
 
 target_metadata = Base.metadata
 
