@@ -13,6 +13,7 @@ from app.api.routes import (
     producer_routes,
     movie_routes,
     studio_routes,
+    award_interval_route,
 )
 from app.services.csv_importer_service import CSVImporterService
 
@@ -86,11 +87,14 @@ def root() -> dict[str, str]:
 # Incluindo as rotas de produtores
 app.include_router(producer_routes.router)
 
-# Registrar rotas de filmes
-app.include_router(movie_routes.router)
-
 # Registrar rotas de estúdios
 app.include_router(studio_routes.router)
 
+# Registrar rotas de filmes
+app.include_router(movie_routes.router)
+
 # Registrar rotas de csv_importer
 app.include_router(csv_importer_routes.router)
+
+# Registrar rotas de intervalos
+app.include_router(award_interval_route.router)
