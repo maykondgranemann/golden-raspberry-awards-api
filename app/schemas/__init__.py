@@ -17,3 +17,4 @@ from .studio import (
     StudioListResponse,
 )
 from .csv_importer import CSVImportRequest, CSVImportResponse
+from .award_interval import AwardInterval, AwardIntervalResponse
