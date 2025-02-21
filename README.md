@@ -10,12 +10,14 @@ Este projeto foi desenvolvido de forma **estruturada e incremental**, utilizando
 ---
 
 ## 🚀 **Recursos Implementados**
+
 ✅ **Criação automática das tabelas e carregamento inicial do CSV** ao iniciar a aplicação  
 ✅ **Endpoint para upload de CSV** e importação dinâmica de novos dados  
 ✅ **CRUD completo para filmes, produtores e estúdios** (`/movies`, `/producers`, `/studios`)  
 ✅ **Query parameters opcionais** para expandir produtores e estúdios na consulta de filmes  
 ✅ **Cálculo do produtor com maior e menor intervalo entre prêmios consecutivos** (`/awards/intervals`)  
 ✅ **Otimização de performance com Cache em Memória** (`lru_cache`)  
+
 ---
 
 ## 🚀 **Tecnologias Utilizadas**
@@ -56,10 +58,11 @@ A API está disponível publicamente no GCP e pode ser acessada em:
 - **`/producers`** → CRUD de produtores  
 - **`/studios`** → CRUD de estúdios  
 - **`/awards/intervals`** → Obtém os produtores com o maior e menor intervalo entre prêmios consecutivos  
+- **`/awards/invalidate-cache`** → Invalida o cache manualmente  
 
 ---
 
-## **Nova Feature: Cálculo de Intervalos entre Prêmios e Cache Otimizado**
+## **Feature Principal: Cálculo de Intervalos entre Prêmios e Cache Otimizado**
 A API agora conta com **duas novas features principais**:  
 1️⃣ **Cálculo do produtor com maior e menor intervalo entre prêmios consecutivos**  
 2️⃣ **Otimização de performance com Cache em Memória**
