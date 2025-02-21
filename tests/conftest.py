@@ -128,3 +128,20 @@ def mock_winning_movies() -> List[MagicMock]:
         MagicMock(year=2018, producers=[producer_b]),
         MagicMock(year=2020, producers=[producer_b]),
     ]
+
+
+@pytest.fixture
+def csv_content_for_intervals() -> bytes:
+    """
+    Retorna um conteúdo de CSV válido com dados fictícios
+    para teste da importação e cálculo de intervalos.
+    """
+    return (
+        b"year;title;studios;producers;winner\n"
+        b"1990;Movie A;Studio X;Producer A;yes\n"
+        b"1995;Movie B;Studio Y;Producer A;yes\n"
+        b"2000;Movie C;Studio Z;Producer A;yes\n"
+        b"2010;Movie D;Studio W;Producer B;yes\n"
+        b"2012;Movie E;Studio W;Producer B;yes\n"
+        b"2020;Movie F;Studio Y;Producer C;yes\n"
+    )

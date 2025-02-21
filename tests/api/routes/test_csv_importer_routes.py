@@ -1,9 +1,6 @@
-import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from io import BytesIO
-from app.main import app
-from app.db.database import get_db
 from app.repositories.movie_repository import MovieRepository
 
 
