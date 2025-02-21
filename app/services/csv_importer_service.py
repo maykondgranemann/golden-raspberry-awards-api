@@ -19,7 +19,7 @@ class CSVImporterService:
     ignored_count: int = 0  # Contador de filmes ignorados (duplicados)
 
     REQUIRED_COLUMNS = {"year", "producers", "winner"}
-    SEPARATORS = [",", " and "]  # Pode ser expandido se necessário
+    SEPARATORS = [", and ", ",", " and "]  # Pode ser expandido se necessário
 
     @classmethod
     def import_csv(cls, db: Session, file_content: str) -> CSVImportResponse:
@@ -152,11 +152,10 @@ class CSVImporterService:
 
         return df
 
-    @staticmethod
-    def _split_values(value: str) -> List[str]:
+    @classmethod
+    def _split_values(cls, value: str) -> List[str]:
         """Divide valores separados por delimitadores comuns."""
-        separators = [",", " and "]
-        pattern = r"\s*" + r"\s*|\s*".join(map(re.escape, separators)) + r"\s*"
+        pattern = r"\s*" + r"\s*|\s*".join(map(re.escape, cls.SEPARATORS)) + r"\s*"
         return [v.strip() for v in re.split(pattern, value) if v.strip()]
 
     @classmethod
@@ -177,11 +176,11 @@ class CSVImporterService:
                 # Criar produtores e associar ao filme
                 producers = ProducerRepository.create_multiple(db, movie_data.producers)
                 movie.producers.extend(producers)
+                db.commit()  # Salva no banco
 
                 # Criar estúdios e associar ao filme
                 studios = StudioRepository.create_multiple(db, movie_data.studios)
                 movie.studios.extend(studios)
-
                 db.commit()  # Salva no banco
 
             except IntegrityError:
