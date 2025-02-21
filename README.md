@@ -15,7 +15,7 @@ Este projeto foi desenvolvido de forma **estruturada e incremental**, utilizando
 ✅ **CRUD completo para filmes, produtores e estúdios** (`/movies`, `/producers`, `/studios`)  
 ✅ **Query parameters opcionais** para expandir produtores e estúdios na consulta de filmes  
 ✅ **Cálculo do produtor com maior e menor intervalo entre prêmios consecutivos** (`/awards/intervals`)  
-
+✅ **Otimização de performance com Cache em Memória** (`lru_cache`)  
 ---
 
 ## 🚀 **Tecnologias Utilizadas**
@@ -23,7 +23,6 @@ Este projeto foi desenvolvido de forma **estruturada e incremental**, utilizando
 - **Framework:** FastAPI
 - **Banco de Dados:** SQLite
 - **Manipulação de Dados:** Pandas
-- **Tarefas Assíncronas:** Celery (backend em memória)
 - **Cache:** `functools.lru_cache`, caso fosse possível instalar, seria Redis
 - **Infraestrutura:** Docker, Kubernetes, Terraform e GCP
 - **CI/CD:** GitHub Actions
@@ -60,7 +59,12 @@ A API está disponível publicamente no GCP e pode ser acessada em:
 
 ---
 
-## **Nova Feature: Cálculo de Intervalos entre Prêmios**
+## **Nova Feature: Cálculo de Intervalos entre Prêmios e Cache Otimizado**
+A API agora conta com **duas novas features principais**:  
+1️⃣ **Cálculo do produtor com maior e menor intervalo entre prêmios consecutivos**  
+2️⃣ **Otimização de performance com Cache em Memória**
+
+### 🏆 **Cálculo de Intervalos entre Prêmios**
 O **endpoint `/awards/intervals`** permite obter os produtores com **o maior e o menor intervalo entre prêmios consecutivos**.
 
 ### 📌 **Como Funciona**
@@ -101,7 +105,21 @@ O **endpoint `/awards/intervals`** permite obter os produtores com **o maior e o
 curl -X 'GET' 'http://107.178.211.239/awards/intervals' -H 'accept: application/json'
 
 ```
+## Otimização com Cache
+Para otimizar o tempo de resposta do endpoint /awards/intervals, foi implementado cache em memória utilizando functools.lru_cache. Isso permite que a API armazene os cálculos e evite processamento desnecessário em chamadas subsequentes.
 
+## Benefícios do cache
+- 🚀 Melhora a performance ao evitar cálculos repetidos.
+- 🔄 Reduz carga no banco de dados, pois as consultas são armazenadas temporariamente.
+- ⏳ Primeira chamada mais lenta, mas as próximas são instantâneas.
+- 🔥 Invalidar manualmente o cache
+
+Se necessário, o cache pode ser invalidado manualmente através do endpoint:
+```
+curl -X 'POST' 'http://107.178.211.239/awards/invalidate-cache' -H 'accept: application/json'
+
+
+```
 ---
 
 ## 📂 **Estrutura do Repositório**
