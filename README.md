@@ -14,6 +14,7 @@ Este projeto foi desenvolvido de forma **estruturada e incremental**, utilizando
 ✅ **Endpoint para upload de CSV** e importação dinâmica de novos dados  
 ✅ **CRUD completo para filmes, produtores e estúdios** (`/movies`, `/producers`, `/studios`)  
 ✅ **Query parameters opcionais** para expandir produtores e estúdios na consulta de filmes  
+✅ **Cálculo do produtor com maior e menor intervalo entre prêmios consecutivos** (`/awards/intervals`)  
 
 ---
 
@@ -55,11 +56,52 @@ A API está disponível publicamente no GCP e pode ser acessada em:
 - **`/movies?expand=producers,studios`** → Retorna filmes com detalhes de produtores e estúdios  
 - **`/producers`** → CRUD de produtores  
 - **`/studios`** → CRUD de estúdios  
+- **`/awards/intervals`** → Obtém os produtores com o maior e menor intervalo entre prêmios consecutivos  
 
-```bash
-curl http://107.178.211.239/health
+---
+
+## **Nova Feature: Cálculo de Intervalos entre Prêmios**
+O **endpoint `/awards/intervals`** permite obter os produtores com **o maior e o menor intervalo entre prêmios consecutivos**.
+
+### 📌 **Como Funciona**
+- A API analisa os filmes vencedores e organiza os prêmios de cada produtor por ano.
+- Em seguida, calcula os intervalos entre os prêmios consecutivos.
+- Retorna os produtores com **o maior intervalo** e **o menor intervalo**.
+
+### 📌 **Exemplo de Resposta**
+```json
+{
+  "min": [
+    {
+      "producer": "Producer B",
+      "interval": 2,
+      "previousWin": 2018,
+      "followingWin": 2020
+    }
+  ],
+  "max": [
+    {
+      "producer": "Producer A",
+      "interval": 5,
+      "previousWin": 2000,
+      "followingWin": 2005
+    },
+    {
+      "producer": "Producer A",
+      "interval": 5,
+      "previousWin": 2005,
+      "followingWin": 2010
+    }
+  ]
+}
+```
+
+## 📌 Como Chamar o Endpoint
+```
+curl -X 'GET' 'http://107.178.211.239/awards/intervals' -H 'accept: application/json'
 
 ```
+
 ---
 
 ## 📂 **Estrutura do Repositório**
@@ -107,10 +149,11 @@ O desenvolvimento segue a abordagem de **Git Flow**, com a seguinte estrutura:
 
 🔹 **Branches de Features**  
 Cada nova funcionalidade ou melhoria é implementada em uma **branch específica** baseada em `develop`. Exemplo:  
-- `feature/import-csv`
-- `feature/create-endpoint`
-- `feature/add-ci-cd`
 - `feature/setup-github`
+- `infra/setup-fastapi`
+- `infra/ci-cd-docker`
+- `feature/import-csv`
+- `feature/award-intervals`
 
 ---
 
@@ -137,6 +180,7 @@ git clone https://github.com/maykondgranemann/golden-raspberry-awards-api.git
 cd golden-raspberry-awards-api
 poetry install
 uvicorn app.main:app --reload
+http://127.0.0.1:8000/
 ```
 
 ### 🐥 Rodando com Docker

@@ -113,3 +113,20 @@ class MovieRepository:
             f"Tentativa de remover filme com ID {movie_id}, mas ele não existe."
         )
         return False
+
+    @staticmethod
+    def get_winning_movies(db: Session) -> List[Movie]:
+        """
+        Retorna todos os filmes vencedores e
+        inclui os produtores e estúdios associados.
+
+        :param db: Sessão do banco de dados.
+        :return: Lista de filmes vencedores.
+        """
+        return (
+            db.query(Movie)
+            .filter(Movie.winner.is_(True))
+            .options(joinedload(Movie.producers), joinedload(Movie.studios))
+            .order_by(Movie.year)
+            .all()
+        )

@@ -1,4 +1,5 @@
 from io import StringIO
+from unittest.mock import MagicMock
 import pandas as pd
 import os
 from fastapi.testclient import TestClient
@@ -9,7 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.db.database import get_db
 from app.models import Base
-from typing import Iterator
+from typing import Iterator, List
 from sqlalchemy.orm import Session
 from app.main import app
 
@@ -108,3 +109,22 @@ def csv_content() -> bytes:
         b"1983;The Lonely Lady;Universal Studios;Robert R. Weston;yes\n"
         b"1984;Rhinestone;20th Century Fox;Marvin Worth and Howard Smith;\n"
     )
+
+
+@pytest.fixture
+def mock_winning_movies() -> List[MagicMock]:
+    """Mock dos filmes vencedores, simulando o retorno da MovieRepository."""
+
+    # Criando objetos MagicMock para produtores e definindo explicitamente os nomes
+    producer_a = MagicMock()
+    producer_a.name = "Producer A"
+    producer_b = MagicMock()
+    producer_b.name = "Producer B"
+
+    return [
+        MagicMock(year=2000, producers=[producer_a]),
+        MagicMock(year=2005, producers=[producer_a]),
+        MagicMock(year=2010, producers=[producer_a]),
+        MagicMock(year=2018, producers=[producer_b]),
+        MagicMock(year=2020, producers=[producer_b]),
+    ]
