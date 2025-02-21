@@ -192,7 +192,8 @@ class CSVImporterService:
                 )
 
         cls.total_inserted = len(movies_data) - cls.ignored_count
+
         logger.success(
             f"{cls.total_inserted} filmes inseridos, "
-            "{cls.ignored_count} ignorados por duplicação."
+            f"{cls.ignored_count} ignorados por duplicação."
         )

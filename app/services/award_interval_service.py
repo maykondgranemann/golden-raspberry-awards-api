@@ -111,11 +111,10 @@ class AwardIntervalService:
 
     @staticmethod
     @lru_cache(maxsize=1)
-    def calculate_award_intervals_cached() -> AwardIntervalResponse:
+    def calculate_award_intervals_cached(db: Session) -> AwardIntervalResponse:
         """
         Calcula os intervalos de prêmios consecutivos e armazena o resultado em cache.
         """
-        db = next(get_db())  # Obtém a sessão do banco de dados
         return AwardIntervalService.calculate_award_intervals(db)
 
     @staticmethod

@@ -137,7 +137,9 @@ class TestAwardIntervalService:
         assert all(interval.producer == "Producer A" for interval in response.max)
         assert all(interval.interval == 5 for interval in response.max)
 
-    def test_calculate_award_intervals_cached(self, mocker: MockFixture) -> None:
+    def test_calculate_award_intervals_cached(
+        self, db_session: Session, mocker: MockFixture
+    ) -> None:
         """
         Testa se a função calculate_award_intervals_cached armazena e
         reutiliza o cache corretamente.
@@ -173,16 +175,16 @@ class TestAwardIntervalService:
         )
 
         # Primeira chamada, deve calcular e armazenar no cache
-        response1 = AwardIntervalService.calculate_award_intervals_cached()
-        response2 = (
-            AwardIntervalService.calculate_award_intervals_cached()
+        response1 = AwardIntervalService.calculate_award_intervals_cached(db_session)
+        response2 = AwardIntervalService.calculate_award_intervals_cached(
+            db_session
         )  # Deve vir do cache
 
         assert response1 is response2  # Deve ser o mesmo objeto na memória
         assert response1.min[0].producer == "Producer B"
         assert response1.max[0].producer == "Producer A"
 
-    def test_invalidate_cache(self, mocker: MockFixture) -> None:
+    def test_invalidate_cache(self, db_session: Session, mocker: MockFixture) -> None:
         """
         Testa se a função invalidate_cache limpa corretamente o cache de
         calculate_award_intervals_cached.
@@ -206,7 +208,6 @@ class TestAwardIntervalService:
             ],
         )
 
-        # Corrigindo o mock de get_db() para gerar um novo iterador sempre que chamado
         mocker.patch(
             "app.services.award_interval_service.get_db", lambda: iter([MagicMock()])
         )
@@ -220,13 +221,13 @@ class TestAwardIntervalService:
         AwardIntervalService.invalidate_cache()
 
         # Primeira chamada deve armazenar no cache
-        AwardIntervalService.calculate_award_intervals_cached()
+        AwardIntervalService.calculate_award_intervals_cached(db_session)
         assert (
             AwardIntervalService.calculate_award_intervals_cached.cache_info().hits == 0
         )
 
         # Chamada subsequente usa cache
-        AwardIntervalService.calculate_award_intervals_cached()
+        AwardIntervalService.calculate_award_intervals_cached(db_session)
         assert (
             AwardIntervalService.calculate_award_intervals_cached.cache_info().hits == 1
         )
@@ -235,7 +236,7 @@ class TestAwardIntervalService:
         AwardIntervalService.invalidate_cache()
 
         # Nova chamada deve recalcular e não usar o cache
-        AwardIntervalService.calculate_award_intervals_cached()
+        AwardIntervalService.calculate_award_intervals_cached(db_session)
         assert (
             AwardIntervalService.calculate_award_intervals_cached.cache_info().hits == 0
         )

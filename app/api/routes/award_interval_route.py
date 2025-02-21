@@ -17,3 +17,11 @@ def get_award_intervals(db: Session = Depends(get_db)) -> AwardIntervalResponse:
     :return: AwardIntervalResponse contendo os produtores com maior e menor intervalo.
     """
     return AwardIntervalHandler.get_award_intervals(db)
+
+
+@router.post("/invalidate-cache")
+def invalidate_award_cache() -> dict:
+    """
+    Endpoint para invalidar manualmente o cache dos cálculos de prêmios.
+    """
+    return AwardIntervalHandler.invalidate_cache()
