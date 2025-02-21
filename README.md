@@ -47,7 +47,7 @@ Este projeto utiliza **Infraestrutura como Código (IaC)** para garantir **autom
 ## 📡 **Acesso à API**
 A API está disponível publicamente no GCP e pode ser acessada em:
 
-🔗 **Base URL:** [http://107.178.211.239/](http://107.178.211.239/)  
+🔗 **Base URL:** [http://107.178.211.239/docs](http://107.178.211.239/docs)  
 
 ### 📌 **Endpoints Disponíveis**
 - **`/health`** → Verifica se a API está rodando corretamente  
