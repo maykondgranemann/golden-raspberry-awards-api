@@ -6,6 +6,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from app.schemas.csv_importer import CSVImportRequest, CSVImportResponse
 from app.repositories import MovieRepository, ProducerRepository, StudioRepository
+from app.services.award_interval_service import AwardIntervalService
 from app.utils.logger import logger
 
 
@@ -197,3 +198,9 @@ class CSVImporterService:
             f"{cls.total_inserted} filmes inseridos, "
             f"{cls.ignored_count} ignorados por duplicação."
         )
+
+        if cls.total_inserted > 0:
+            logger.info(
+                "Novos filmes inseridos. Invalidando cache dos cálculos de prêmios."
+            )
+            AwardIntervalService.invalidate_cache()
