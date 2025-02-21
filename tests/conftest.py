@@ -128,3 +128,37 @@ def mock_winning_movies() -> List[MagicMock]:
         MagicMock(year=2018, producers=[producer_b]),
         MagicMock(year=2020, producers=[producer_b]),
     ]
+
+
+@pytest.fixture
+def csv_content_for_intervals() -> bytes:
+    """
+    Retorna um conteúdo de CSV válido com dados fictícios
+    para teste da importação e cálculo de intervalos.
+    """
+    return (
+        b"year;title;studios;producers;winner\n"
+        b"1990;Movie A;Studio X;Producer A;yes\n"
+        b"1995;Movie B;Studio Y;Producer A;yes\n"
+        b"2000;Movie C;Studio Z;Producer A;yes\n"
+        b"2010;Movie D;Studio W;Producer B;yes\n"
+        b"2012;Movie E;Studio W;Producer B;yes\n"
+        b"2020;Movie F;Studio Y;Producer C;yes\n"
+    )
+
+
+@pytest.fixture
+def csv_content_for_second_upload() -> bytes:
+    """
+    Retorna um novo conjunto de dados CSV com prêmios diferentes para forçar
+    a invalidação do cache e garantir que os novos dados sejam processados.
+    """
+    return (
+        b"year;title;studios;producers;winner\n"
+        b"1991;Movie X;Studio A;Producer X;yes\n"
+        b"1996;Movie Y;Studio B;Producer X;yes\n"
+        b"2001;Movie Z;Studio C;Producer Y;yes\n"
+        b"2011;Movie W;Studio D;Producer Y;yes\n"
+        b"2013;Movie V;Studio D;Producer Y;yes\n"
+        b"2021;Movie U;Studio E;Producer Z;yes\n"
+    )

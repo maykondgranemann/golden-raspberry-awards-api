@@ -1,8 +1,10 @@
+from functools import lru_cache
 from sqlalchemy.orm import Session
 from app.schemas.award_interval import AwardInterval, AwardIntervalResponse
 from app.repositories.movie_repository import MovieRepository
 from collections import defaultdict
 from typing import List, Dict, cast
+from app.db.database import get_db
 
 
 class AwardIntervalService:
@@ -106,3 +108,18 @@ class AwardIntervalService:
             min=AwardIntervalService.get_min_interval(intervals),
             max=AwardIntervalService.get_max_interval(intervals),
         )
+
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def calculate_award_intervals_cached(db: Session) -> AwardIntervalResponse:
+        """
+        Calcula os intervalos de prêmios consecutivos e armazena o resultado em cache.
+        """
+        return AwardIntervalService.calculate_award_intervals(db)
+
+    @staticmethod
+    def invalidate_cache() -> None:
+        """
+        Invalida o cache armazenado.
+        """
+        AwardIntervalService.calculate_award_intervals_cached.cache_clear()
